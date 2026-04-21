@@ -5,6 +5,10 @@ const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 const int kColumnCount = 60;
 const int kRowCount = 20;
 
+struct Vector3 {
+    float x, y, z;
+};
+
 struct Matrix4x4 {
     float m[4][4];
 };
@@ -127,6 +131,12 @@ Matrix4x4 MakeIdentity4x4() {
     return result;
 }
 
+void VectorScreenPrintf(int x, int y, const Vector3& v, const char* label) {
+    Novice::ScreenPrintf(x, y, "%.02f", v.x);
+    Novice::ScreenPrintf(x + kColumnCount, y, "%.02f", v.y);
+    Novice::ScreenPrintf(x + kColumnCount * 2, y, "%.02f", v.z);
+    Novice::ScreenPrintf(x + kColumnCount * 3, y, "%s", label);
+}
 
 void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
     Novice::ScreenPrintf(x, y, "%s", label);
@@ -135,6 +145,37 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
             Novice::ScreenPrintf(x + j * kColumnCount, y + (i + 1) * kRowCount, "%6.2f", m.m[i][j]);
         }
 	}
+}
+
+
+Matrix4x4 MakeTranslateMatrix(const Vector3& translation) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[3][0] = translation.x;
+    result.m[3][1] = translation.y;
+    result.m[3][2] = translation.z;
+    return result;
+}
+
+Matrix4x4 makeScaleMatrix(const Vector3& scale) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[0][0] = scale.x;
+    result.m[1][1] = scale.y;
+    result.m[2][2] = scale.z;
+    return result;
+}
+
+Vector3 Transform(const Vector3& point, const Matrix4x4& matrix) {
+    Vector3 result = {};
+    result.x = point.x * matrix.m[0][0] + point.y * matrix.m[1][0] + point.z * matrix.m[2][0] + 1.0f * matrix.m[3][0];
+    result.y = point.x * matrix.m[0][1] + point.y * matrix.m[1][1] + point.z * matrix.m[2][1] + 1.0f * matrix.m[3][1];
+    result.z = point.x * matrix.m[0][2] + point.y * matrix.m[1][2] + point.z * matrix.m[2][2] + 1.0f * matrix.m[3][2];
+    float w = point.x * matrix.m[0][3] + point.y * matrix.m[1][3] + point.z * matrix.m[2][3] + 1.0f * matrix.m[3][3];
+
+    if (w != 0.0f) {
+        result = { result.x / w, result.y / w, result.z / w };
+    }
+
+    return result;
 }
 
 
@@ -148,27 +189,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Matrix4x4 m1 = {
-        3.2f, 0.7f, 9.6f, 4.4f,
-        5.5f, 1.3f, 7.8f, 2.1f,
-        6.9f, 8.0f, 2.6f, 1.0f,
-        0.5f, 7.2f, 5.1f, 3.3f,
-    };
-
-    Matrix4x4 m2 = {
-        4.1f, 6.5f, 3.3f, 2.2f,
-        8.8f, 0.6f, 9.9f, 7.7f,
-        1.1f, 5.5f, 6.6f, 0.0f,
-        3.3f, 9.9f, 8.8f, 2.2f,
-	};
-
-    
+	
 
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
 
+        Vector3 translate = { 4.1f, 2.6f ,0.8f };
+        Vector3 scale = { 1.5f, 5.2f, 7.3f };
 
+        Vector3 point = { 2.3f, 3.8f, 1.4f };
+        Matrix4x4 transformMatrix = {
+            1.0f, 2.0f, 3.0f, 4.0f,
+            3.0f, 1.0f, 1.0f, 2.0f,
+            1.0f, 4.0f, 2.0f, 3.0f,
+            2.0f, 2.0f, 1.0f, 3.0f
+        };
+
+        Vector3 transformed = Transform(point, transformMatrix);
+
+		Matrix4x4 translateMatrix = MakeTranslateMatrix(translate);
+		Matrix4x4 scaleMatrix = makeScaleMatrix(scale);
+
+		
 
         // フレームの開始
         Novice::BeginFrame();
@@ -178,23 +221,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
-		Matrix4x4 resultAdd = Add(m1, m2);
-		Matrix4x4 resultMultiply = Multiply(m1, m2);
-		Matrix4x4 resultSubtract = Subtract(m1, m2);
-		Matrix4x4 inverseM1 = Inverse(m1);
-		Matrix4x4 inverseM2 = Inverse(m2);
-		Matrix4x4 transposeM1 = Transpose(m1);
-		Matrix4x4 transposeM2 = Transpose(m2);
-		Matrix4x4 identity = MakeIdentity4x4();
 
-        MatrixScreenPrintf(0, 0, resultAdd, "Add");
-		MatrixScreenPrintf(0, kRowCount * 5, resultSubtract, "Subtract");
-        MatrixScreenPrintf(0, kRowCount * 5 * 2, resultMultiply, "Multiply");
-        MatrixScreenPrintf(0, kRowCount * 5 * 3, inverseM1, "Inverse M1");
-        MatrixScreenPrintf(0, kRowCount * 5 * 4, inverseM2, "Inverse M2");
-        MatrixScreenPrintf(kColumnCount * 5, 0, transposeM1, "Transpose M1");
-        MatrixScreenPrintf(kColumnCount * 5, kRowCount * 5, transposeM2, "Transpose M2");
-        MatrixScreenPrintf(kColumnCount * 5, kRowCount * 5 * 2, identity, "Identity");
+		VectorScreenPrintf(0, 0, transformed, "transformed");
+		MatrixScreenPrintf(0, kRowCount, translateMatrix, "translateMatrix");
+		MatrixScreenPrintf(0, kRowCount * 6, scaleMatrix, "scaleMatrix");
+
+
 
         // フレームの終了
         Novice::EndFrame();
