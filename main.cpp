@@ -144,7 +144,7 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
         for (int j = 0; j < 4; ++j) {
             Novice::ScreenPrintf(x + j * kColumnCount, y + (i + 1) * kRowCount, "%6.2f", m.m[i][j]);
         }
-	}
+    }
 }
 
 
@@ -186,16 +186,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     Novice::Initialize(kWindowTitle, 1280, 720);
 
     // キー入力結果を受け取る箱
-    char keys[256] = {0};
-    char preKeys[256] = {0};
+    char keys[256] = { 0 };
+    char preKeys[256] = { 0 };
 
-	
+
 
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
 
-        Vector3 translate = { 4.1f, 2.6f ,0.8f };
+        Vector3 translate = { 4.1f, 2.6f, 0.8f };
         Vector3 scale = { 1.5f, 5.2f, 7.3f };
 
         Vector3 point = { 2.3f, 3.8f, 1.4f };
@@ -208,23 +208,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
         Vector3 transformed = Transform(point, transformMatrix);
 
-		Matrix4x4 translateMatrix = MakeTranslateMatrix(translate);
-		Matrix4x4 scaleMatrix = makeScaleMatrix(scale);
+        Matrix4x4 translateMatrix = MakeTranslateMatrix(translate);
+        Matrix4x4 scaleMatrix = makeScaleMatrix(scale);
 
-		
+
 
         // フレームの開始
         Novice::BeginFrame();
 
 
-        
+
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-		VectorScreenPrintf(0, 0, transformed, "transformed");
-		MatrixScreenPrintf(0, kRowCount, translateMatrix, "translateMatrix");
-		MatrixScreenPrintf(0, kRowCount * 6, scaleMatrix, "scaleMatrix");
+        VectorScreenPrintf(0, 0, transformed, "transformed");
+        MatrixScreenPrintf(0, kRowCount, translateMatrix, "translateMatrix");
+        MatrixScreenPrintf(0, kRowCount * 6, scaleMatrix, "scaleMatrix");
 
 
 
