@@ -21,6 +21,38 @@ Matrix4x4 MakeIdentity4x4() {
     return result;
 }
 
+Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[0][0] = scale.x;
+    result.m[1][1] = scale.y;
+    result.m[2][2] = scale.z;
+    return result;
+}
+
+Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
+    Matrix4x4 result{};
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            result.m[i][j] = 0.0f;
+            for (int k = 0; k < 4; ++k) {
+                result.m[i][j] += m1.m[i][k] * m2.m[k][j];
+            }
+        }
+    }
+    return result;
+}
+
+Matrix4x4 MakeTranslateMatrix(const Vector3& translation) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[3][0] = translation.x;
+    result.m[3][1] = translation.y;
+    result.m[3][2] = translation.z;
+    return result;
+}
+
+
+
+
 Matrix4x4 MakeRotateXMatrix(float radian) {
     Matrix4x4 result = MakeIdentity4x4();
     float cosTheta = std::cos(radian);
@@ -52,6 +84,22 @@ Matrix4x4 MakeRotateZMatrix(float radian) {
     return result;
 }
 
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotation, const Vector3& translation) {
+    Matrix4x4 result = MakeIdentity4x4();
+    Matrix4x4 scaleMatrix = MakeScaleMatrix(scale);
+    Matrix4x4 rotateX = MakeRotateXMatrix(rotation.x);
+    Matrix4x4 rotateY = MakeRotateYMatrix(rotation.y);
+    Matrix4x4 rotateZ = MakeRotateZMatrix(rotation.z);
+    Matrix4x4 translateMatrix = MakeTranslateMatrix(translation);
+    
+    Matrix4x4 rotateXYZ = Multiply(rotateX, Multiply(rotateY, rotateZ));
+    //result = Multiply(rotateXYZ, translateMatrix);
+    //result = Multiply(scaleMatrix, result);
+    result = Multiply(Multiply(scaleMatrix, rotateXYZ), translateMatrix);
+
+    return result;
+}
+
 Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
     Matrix4x4 result{};
     for (int i = 0; i < 4; ++i) {
@@ -72,18 +120,7 @@ Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
     return result;
 }
 
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
-    Matrix4x4 result{};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = 0.0f;
-            for (int k = 0; k < 4; ++k) {
-                result.m[i][j] += m1.m[i][k] * m2.m[k][j];
-            }
-        }
-    }
-    return result;
-}
+
 
 Matrix4x4 Inverse(const Matrix4x4& mat) {
     Matrix4x4 res;
@@ -181,21 +218,8 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
 }
 
 
-Matrix4x4 MakeTranslateMatrix(const Vector3& translation) {
-    Matrix4x4 result = MakeIdentity4x4();
-    result.m[3][0] = translation.x;
-    result.m[3][1] = translation.y;
-    result.m[3][2] = translation.z;
-    return result;
-}
 
-Matrix4x4 makeScaleMatrix(const Vector3& scale) {
-    Matrix4x4 result = MakeIdentity4x4();
-    result.m[0][0] = scale.x;
-    result.m[1][1] = scale.y;
-    result.m[2][2] = scale.z;
-    return result;
-}
+
 
 Vector3 Transform(const Vector3& point, const Matrix4x4& matrix) {
     Vector3 result = {};
@@ -223,19 +247,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char preKeys[256] = {0};
 
 	
+    Vector3 scale{ 1.2f, 0.79f, -2.1f };
+    Vector3 rotate{ 0.4f, 1.43f, -0.8f };
+    Vector3 translate{ 2.7f, -4.15f, 1.57f };
+
+    Matrix4x4 worldMatrix = MakeAffineMatrix(scale, rotate, translate);
 
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
 
-        Vector3 rotation = { 0.4f, 1.43f, -0.8f };
-
-		
-        Matrix4x4 rotateX = MakeRotateXMatrix(rotation.x);
-        Matrix4x4 rotateY = MakeRotateYMatrix(rotation.y);
-        Matrix4x4 rotateZ = MakeRotateZMatrix(rotation.z);
-
-        Matrix4x4 rotateXYZ = Multiply(rotateX, Multiply(rotateY, rotateZ));
+        
 
         // フレームの開始
         Novice::BeginFrame();
@@ -246,10 +268,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        MatrixScreenPrintf(0, 0, rotateX, "RotateX");
-        MatrixScreenPrintf(0, kRowCount * 5, rotateY, "RotateY");
-        MatrixScreenPrintf(0, kRowCount * 5 * 2, rotateZ, "RotateZ");
-        MatrixScreenPrintf(0, kRowCount * 5 * 3, rotateXYZ, "RotateXYZ");
+        MatrixScreenPrintf(0, 0, worldMatrix, "World");
 
         // フレームの終了
         Novice::EndFrame();
