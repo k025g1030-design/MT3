@@ -100,6 +100,42 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotation, const 
     return result;
 }
 
+Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[0][0] = 2.0f / (right - left);
+    result.m[1][1] = 2.0f / (top - bottom);
+    result.m[2][2] = -2.0f / (farClip - nearClip);
+    result.m[3][0] = -(right + left) / (right - left);
+    result.m[3][1] = -(top + bottom) / (top - bottom);
+    result.m[3][2] = -(farClip + nearClip) / (farClip - nearClip);
+    return result;
+}
+
+Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspect, float nearClip, float farClip) {
+    Matrix4x4 result{};
+    float f = 1.0f / std::tan(fovY / 2.0f);
+    result.m[0][0] = f / aspect;
+    result.m[1][1] = f;
+    result.m[2][2] = (farClip + nearClip) / (nearClip - farClip);
+    result.m[2][3] = -1.0f;
+    result.m[3][2] = (2.0f * farClip * nearClip) / (nearClip - farClip);
+    return result;
+}
+
+
+Matrix4x4 MakeViewportMatrix(float x, float y, float width, float height, float minDepth, float maxDepth) {
+    Matrix4x4 result = MakeIdentity4x4();
+    result.m[0][0] = width / 2.0f;
+    result.m[1][1] = -height / 2.0f; // Y軸を反転
+    result.m[2][2] = maxDepth - minDepth;
+    result.m[3][0] = x + width / 2.0f;
+    result.m[3][1] = y + height / 2.0f;
+    result.m[3][2] = minDepth;
+    return result;
+}
+
+
+
 Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
     Matrix4x4 result{};
     for (int i = 0; i < 4; ++i) {
@@ -247,11 +283,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char preKeys[256] = {0};
 
 	
-    Vector3 scale{ 1.2f, 0.79f, -2.1f };
-    Vector3 rotate{ 0.4f, 1.43f, -0.8f };
-    Vector3 translate{ 2.7f, -4.15f, 1.57f };
+    Matrix4x4 orthographicMatrix = MakeOrthographicMatrix(-160.0f,160.0f,200.0f,300.0f,0.0f,1000.0f);
 
-    Matrix4x4 worldMatrix = MakeAffineMatrix(scale, rotate, translate);
+    Matrix4x4 perspectiveMatrix = MakePerspectiveFovMatrix(0.63f, 1.33f, 0.1f, 1000.0f);
+
+    Matrix4x4 viewportMatrix = MakeViewportMatrix(100.0f, 200.0f, 600.0f, 300.0f, 0.0f, 1.0f);
 
 
     // ウィンドウの×ボタンが押されるまでループ
@@ -268,7 +304,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        MatrixScreenPrintf(0, 0, worldMatrix, "World");
+        MatrixScreenPrintf(0, 0, orthographicMatrix, "orthographicMatrix");
+        MatrixScreenPrintf(0, kRowCount * 5, perspectiveMatrix, "perspectiveMatrix");
+        MatrixScreenPrintf(0, kRowCount * 10, viewportMatrix, "viewportMatrix");
+
 
         // フレームの終了
         Novice::EndFrame();
