@@ -4,6 +4,8 @@
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 const int kColumnCount = 60;
 const int kRowCount = 20;
+const int kScreenWidth = 1280;
+const int kScreenHeight = 720;
 
 struct Vector3 {
     float x, y, z;
@@ -276,37 +278,96 @@ Vector3 Transform(const Vector3& point, const Matrix4x4& matrix) {
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // ライブラリの初期化
-    Novice::Initialize(kWindowTitle, 1280, 720);
+    Novice::Initialize(kWindowTitle, kScreenWidth, kScreenHeight);
 
     // キー入力結果を受け取る箱
     char keys[256] = {0};
     char preKeys[256] = {0};
 
 	
-    Matrix4x4 orthographicMatrix = MakeOrthographicMatrix(-160.0f,160.0f,200.0f,300.0f,0.0f,1000.0f);
-
-    Matrix4x4 perspectiveMatrix = MakePerspectiveFovMatrix(0.63f, 1.33f, 0.1f, 1000.0f);
-
-    Matrix4x4 viewportMatrix = MakeViewportMatrix(100.0f, 200.0f, 600.0f, 300.0f, 0.0f, 1.0f);
+    Vector3 rotate{};
+    Vector3 translate{kScreenWidth / 2, kScreenHeight / 2, 0.0f};
+    Vector3 cameraPostion{};
+    Vector3 kLocalVertices[3] = {
+        { 0.0f, -50.0f, 0.0f },
+        { 50.0f, 50.0f, 0.0f },
+        { -50.0f, 50.0f, 0.0f }
+    };
 
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
+
+        Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, rotate, translate);
+        Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, cameraPostion);
+        Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+        Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
+        Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+        Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
+        Vector3 screenVertices[3];
+        for (int i = 0; i < 3; ++i) {
+            Vector3 ndcVertex = Transform(kLocalVertices[i], worldViewProjectionMatrix);
+            screenVertices[i] = Transform(ndcVertex, viewportMatrix);
+        }
 
         
 
         // フレームの開始
         Novice::BeginFrame();
 
+        if (keys[DIK_A] != 0) {
+            translate.x -= 1;
+        }
 
-        
+        if (keys[DIK_D] != 0) {
+            translate.x += 1;
+        }
+
+        if (keys[DIK_W] != 0) {
+            translate.y -= 1;
+        }
+
+        if (keys[DIK_S] != 0) {
+            translate.y += 1;
+        }
+
+        if (keys[DIK_Q] != 0) {
+            rotate.z -= 0.01f;
+        }
+
+        if (keys[DIK_E] != 0) {
+            rotate.z += 0.01f;
+        }
+
+        if (keys[DIK_UP] != 0) {
+            rotate.x += 0.01f;
+        }
+
+        if (keys[DIK_DOWN] != 0) {
+            rotate.x -= 0.01f;
+        }
+
+        if (keys[DIK_LEFT] != 0) {
+            rotate.y-= 0.01f;
+        }
+
+        if (keys[DIK_RIGHT] != 0) {
+            rotate.y += 0.01f;
+        }
+
+
+
+
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        MatrixScreenPrintf(0, 0, orthographicMatrix, "orthographicMatrix");
-        MatrixScreenPrintf(0, kRowCount * 5, perspectiveMatrix, "perspectiveMatrix");
-        MatrixScreenPrintf(0, kRowCount * 10, viewportMatrix, "viewportMatrix");
+        Novice::DrawTriangle(
+            (int)screenVertices[0].x, (int)screenVertices[0].y,
+            (int)screenVertices[1].x, (int)screenVertices[1].y,
+            (int)screenVertices[2].x, (int)screenVertices[2].y,
+            RED, kFillModeSolid);
+
 
 
         // フレームの終了
