@@ -1,0 +1,190 @@
+#pragma once
+#include <Novice.h>
+#include <imgui.h>
+#include "Transformations.hpp"
+
+const int kColumnCount = 60;
+const int kRowCount = 20;
+const int kScreenWidth = 1280;
+const int kScreenHeight = 720;
+
+/**
+ * メモリ上の数学・幾何データを視覚化（レンダリング）し、デバッグ用のインターフェースを提供すること。
+ * グラフィックスAPI（NoviceやImGui）と直接通信することを許された唯一の層です。
+ **/
+
+void VectorScreenPrintf(int x, int y, const Vector3& v, const char* label) {
+    Novice::ScreenPrintf(x, y, "%.02f", v.x);
+    Novice::ScreenPrintf(x + kColumnCount, y, "%.02f", v.y);
+    Novice::ScreenPrintf(x + kColumnCount * 2, y, "%.02f", v.z);
+    Novice::ScreenPrintf(x + kColumnCount * 3, y, "%s", label);
+}
+
+void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
+    Novice::ScreenPrintf(x, y, "%s", label);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            Novice::ScreenPrintf(x + j * kColumnCount, y + (i + 1) * kRowCount, "%6.2f", m.m[i][j]);
+        }
+    }
+}
+
+void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
+    const float kGridHalfWidth = 2.0f;
+    const uint32_t kSubdivision = 10;
+    const float kGridEvery = (kGridHalfWidth * 2.0f) / (float)kSubdivision;
+    for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
+        float x = -kGridHalfWidth + ((float)xIndex * kGridEvery);
+
+        Vector3 startWorld = { x, 0.0f, -kGridHalfWidth };
+        Vector3 endWord = { x, 0.0f, kGridHalfWidth };
+
+        Vector3 startNdc = Transform(startWorld, viewProjectionMatrix);
+        Vector3 startScreen = Transform(startNdc, viewportMatrix);
+
+        Vector3 endNdc = Transform(endWord, viewProjectionMatrix);
+        Vector3 endScreen = Transform(endNdc, viewportMatrix);
+
+        uint32_t color = 0xAAAAAAFF;
+        if (std::abs(x) < 0.001f) {
+            color = 0x000000FF;
+        }
+
+        Novice::DrawLine(
+            (int)startScreen.x, (int)startScreen.y,
+            (int)endScreen.x, (int)endScreen.y,
+            color
+        );
+    }
+
+    for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
+        float z = -kGridHalfWidth + ((float)zIndex * kGridEvery);
+
+        Vector3 startWorld = { -kGridHalfWidth, 0.0f, z };
+        Vector3 endWord = { kGridHalfWidth, 0.0f, z };
+
+        Vector3 startNdc = Transform(startWorld, viewProjectionMatrix);
+        Vector3 startScreen = Transform(startNdc, viewportMatrix);
+
+        Vector3 endNdc = Transform(endWord, viewProjectionMatrix);
+        Vector3 endScreen = Transform(endNdc, viewportMatrix);
+
+        uint32_t color = 0xAAAAAAFF;
+        if (std::abs(z) < 0.001f) {
+            color = 0x000000FF;
+        }
+
+        Novice::DrawLine(
+            (int)startScreen.x, (int)startScreen.y,
+            (int)endScreen.x, (int)endScreen.y,
+            color
+        );
+    }
+}
+
+void DrawGridV2(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
+    const float kGridHalfWidth = 2.0f;               // グリッドの半分の幅 (中心から端までの距離)
+    const uint32_t kSubdivision = 10;                // 分割数 (何マスに区切るか)
+    const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision); // 1マス分の幅 (0.4)
+
+    // 1つのループで縦線（Z軸平行）と横線（X軸平行）を同時に描画
+    for (uint32_t i = 0; i <= kSubdivision; ++i) {
+        // 現在の線が通る世界座標（World Space）上の位置（オフセット量）を計算
+        float value = -kGridHalfWidth + (float(i) * kGridEvery);
+
+        // 原点（軸線）に近い線は黒色(0x000000FF)、それ以外は薄い灰色(0xAAAAAAFF)に設定
+        uint32_t color = (std::abs(value) < 0.001f) ? 0x000000FF : 0xAAAAAAFF;
+
+        // ==========================================
+        // 1. 縦線の描画（Z軸に平行：X座標を固定し、Zの奥から手前へ繋ぐ）
+        // ==========================================
+        Vector3 startZ = { value, 0.0f, -kGridHalfWidth }; // 始点（奥）
+        Vector3 endZ = { value, 0.0f, kGridHalfWidth }; // 終点（手前）
+
+        // 世界座標 -> 3D空間（WVP変換） -> 画面ピクセル座標（ビューポート変換）へ一気に変換
+        Vector3 sScreenZ = Transform(Transform(startZ, viewProjectionMatrix), viewportMatrix);
+        Vector3 eScreenZ = Transform(Transform(endZ, viewProjectionMatrix), viewportMatrix);
+
+        // 2Dの画面上にラインを描画
+        Novice::DrawLine((int)sScreenZ.x, (int)sScreenZ.y, (int)eScreenZ.x, (int)eScreenZ.y, color);
+
+        // ==========================================
+        // 2. 横線の描画（X軸に平行：Z座標を固定し、Xの左から右へ繋ぐ）
+        // ==========================================
+        Vector3 startX = { -kGridHalfWidth, 0.0f, value }; // 始点（左）
+        Vector3 endX = { kGridHalfWidth, 0.0f, value }; // 終点（右）
+
+        // 同じく座標変換を行う
+        Vector3 sScreenX = Transform(Transform(startX, viewProjectionMatrix), viewportMatrix);
+        Vector3 eScreenX = Transform(Transform(endX, viewProjectionMatrix), viewportMatrix);
+
+        // 2Dの画面上にラインを描画
+        Novice::DrawLine((int)sScreenX.x, (int)sScreenX.y, (int)eScreenX.x, (int)eScreenX.y, color);
+    }
+}
+
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    const uint32_t kSubdivision = 16;                         // 分割数（16や20くらいが綺麗です）
+    const float kLonEvery = (2.0f * (float)M_PI) / float(kSubdivision); // 経度分割1つ分の角度 (360度 / 分割数)
+    const float kLatEvery = (float)M_PI / float(kSubdivision);          // 緯度分割1つ分の角度 (180度 / 分割数)
+
+    // 緯度の方向に分割 -π/2 ～ π/2
+    for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+        float lat = -(float)M_PI / 2.0f + kLatEvery * latIndex; // 現在の緯度
+
+        // 経度の方向に分割 0 ～ 2π
+        for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+            float lon = lonIndex * kLonEvery; // 現在の経度
+
+            // world座標系でのa, b, cを求める
+            Vector3 a, b, c;
+
+            // 点a: 現在の緯度・経度からXYZを計算
+            a.x = sphere.center.x + sphere.radius * std::cos(lat) * std::cos(lon);
+            a.y = sphere.center.y + sphere.radius * std::sin(lat);
+            a.z = sphere.center.z + sphere.radius * std::cos(lat) * std::sin(lon);
+
+            // 点b: 次の経度 (緯度はそのまま。経度方向に線を引くため)
+            float nextLon = lon + kLonEvery;
+            b.x = sphere.center.x + sphere.radius * std::cos(lat) * std::cos(nextLon);
+            b.y = sphere.center.y + sphere.radius * std::sin(lat);
+            b.z = sphere.center.z + sphere.radius * std::cos(lat) * std::sin(nextLon);
+
+            // 点c: 次の緯度 (経度はそのまま。緯度方向に線を引くため)
+            float nextLat = lat + kLatEvery;
+            c.x = sphere.center.x + sphere.radius * std::cos(nextLat) * std::cos(lon);
+            c.y = sphere.center.y + sphere.radius * std::sin(nextLat);
+            c.z = sphere.center.z + sphere.radius * std::cos(nextLat) * std::sin(lon);
+
+            // a, b, cをScreen座標系まで変換
+            Vector3 aScreen = Transform(Transform(a, viewProjectionMatrix), viewportMatrix);
+            Vector3 bScreen = Transform(Transform(b, viewProjectionMatrix), viewportMatrix);
+            Vector3 cScreen = Transform(Transform(c, viewProjectionMatrix), viewportMatrix);
+
+            // ab, acで線を引く (ワイヤーフレームの四角形を構成する2辺)
+            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)bScreen.x, (int)bScreen.y, color);
+            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)cScreen.x, (int)cScreen.y, color);
+        }
+    }
+}
+
+void DrawLine(Vector3 start, Vector3 end, uint32_t color) {
+    Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+}
+
+void DebugWin(Sphere* sphere, CameraObj* camera, Vector3* project) {
+    ImGui::Begin("DEBUG");
+    ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
+    ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
+    ImGui::DragFloat3("SphereCenter", &sphere->center.x, 0.01f);
+    ImGui::InputFloat3("Project", &project->x, "%.3f", ImGuiInputTextFlags_ReadOnly);
+    //ImGui::DragFloat("SphereRadius", &sphere->radius, 0.01f);
+    ImGui::End();
+}
+
+void TestCorss() {
+    Vector3 v1{ 1.2f, -3.9f, 2.5f };
+    Vector3 v2{ 2.8f, 0.4f, -1.3f };
+    VectorScreenPrintf(0, 0, Cross(v1, v2), "Cross");
+
+}
