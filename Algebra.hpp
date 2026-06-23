@@ -1,5 +1,6 @@
 #pragma once
 #include "GeometryTypes.hpp"
+#include <cmath>
 /**
  * ベクトルおよび行列に対する純粋な数学的演算（加減乗除、内積、外積、逆行列、転置など）の実行。
  **/
@@ -38,6 +39,16 @@ Vector3 Project(const Vector3& v1, const Vector3& v2) {
     }
     float t = Dot(v1, v2) / lengthSq;
     return Multiply(t, v2);
+}
+
+/* ベクトルの長さの2乗を計算する（最適化のため平方根を避ける） */
+float LengthSq(const Vector3& v) {
+    return v.x * v.x + v.y * v.y + v.z * v.z;
+}
+
+/* 実際に長さが必要な時だけ平方根を計算する */
+float Length(const Vector3& v) {
+    return std::sqrtf(LengthSq(v));
 }
 
 /********************** ベクトル演算 (Vector Operations) ***************************/

@@ -20,3 +20,15 @@ Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
     return Add(segment.origin, Multiply(t, segment.diff));
 }
+
+bool IsCollision(const Sphere& s1, const Sphere& s2) {
+    float distanceSq = LengthSq(Subtract(s1.center, s2.center));
+
+    float radiusSum = s1.radius + s2.radius;
+    float radiusSumSq = radiusSum * radiusSum;
+
+    if (distanceSq <= radiusSumSq) {
+        return true;
+    }
+    return false;
+}
