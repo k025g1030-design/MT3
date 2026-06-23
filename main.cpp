@@ -1,5 +1,6 @@
 ﻿#include <Novice.h>
 #include <cmath>
+#include <imgui.h>
 
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 const int kColumnCount = 60;
@@ -19,6 +20,11 @@ struct CameraObj {
     Vector3 position;
     Vector3 rotation;
     Vector3 scale;
+};
+
+struct Sphere {
+    Vector3 center;
+    float radius;
 };
 
 float Deg2Rad(float degree) {
@@ -401,6 +407,61 @@ void DrawGridV2(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewport
     }
 }
 
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    const float pi = std::acos(-1.0f);
+    const uint32_t kSubdivision = 16;                         // 分割数（16や20くらいが綺麗です）
+    const float kLonEvery = (2.0f * pi) / float(kSubdivision); // 経度分割1つ分の角度 (360度 / 分割数)
+    const float kLatEvery = pi / float(kSubdivision);          // 緯度分割1つ分の角度 (180度 / 分割数)
+
+    // 緯度の方向に分割 -π/2 ～ π/2
+    for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+        float lat = -pi / 2.0f + kLatEvery * latIndex; // 現在の緯度
+
+        // 経度の方向に分割 0 ～ 2π
+        for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+            float lon = lonIndex * kLonEvery; // 現在の経度
+
+            // world座標系でのa, b, cを求める
+            Vector3 a, b, c;
+
+            // 点a: 現在の緯度・経度からXYZを計算
+            a.x = sphere.center.x + sphere.radius * std::cos(lat) * std::cos(lon);
+            a.y = sphere.center.y + sphere.radius * std::sin(lat);
+            a.z = sphere.center.z + sphere.radius * std::cos(lat) * std::sin(lon);
+
+            // 点b: 次の経度 (緯度はそのまま。経度方向に線を引くため)
+            float nextLon = lon + kLonEvery;
+            b.x = sphere.center.x + sphere.radius * std::cos(lat) * std::cos(nextLon);
+            b.y = sphere.center.y + sphere.radius * std::sin(lat);
+            b.z = sphere.center.z + sphere.radius * std::cos(lat) * std::sin(nextLon);
+
+            // 点c: 次の緯度 (経度はそのまま。緯度方向に線を引くため)
+            float nextLat = lat + kLatEvery;
+            c.x = sphere.center.x + sphere.radius * std::cos(nextLat) * std::cos(lon);
+            c.y = sphere.center.y + sphere.radius * std::sin(nextLat);
+            c.z = sphere.center.z + sphere.radius * std::cos(nextLat) * std::sin(lon);
+
+            // a, b, cをScreen座標系まで変換
+            Vector3 aScreen = Transform(Transform(a, viewProjectionMatrix), viewportMatrix);
+            Vector3 bScreen = Transform(Transform(b, viewProjectionMatrix), viewportMatrix);
+            Vector3 cScreen = Transform(Transform(c, viewProjectionMatrix), viewportMatrix);
+
+            // ab, acで線を引く (ワイヤーフレームの四角形を構成する2辺)
+            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)bScreen.x, (int)bScreen.y, color);
+            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)cScreen.x, (int)cScreen.y, color);
+        }
+    }
+}
+
+void DebugWin(Sphere* sphere, CameraObj* camera) {
+    ImGui::Begin("DEBUG");
+    ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
+    ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
+    ImGui::DragFloat3("SphereCenter", &sphere->center.x, 0.01f);
+    ImGui::DragFloat("SphereRadius", &sphere->radius, 0.01f);
+    ImGui::End();
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -412,8 +473,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char preKeys[256] = {0};
 
 	
-    Vector3 rotate{};
-    Vector3 translate{kScreenWidth / 2, kScreenHeight / 2, 0.0f};
+    Sphere sphere = {
+        {0,0,0},
+        .5f
+    };
     CameraObj camera = {
         { 0.0f, 3.5f, -7.0f },
         { 0.4f, 0.0f, 0.0f },
@@ -443,15 +506,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
         
+        
 
         // フレームの開始
         Novice::BeginFrame();
+
+        DebugWin(&sphere, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
         DrawGridV2(viewProjectionMatrix, viewportMatrix);
+
+        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, RED);
 
         // フレームの終了
         Novice::EndFrame();
