@@ -274,6 +274,22 @@ Vector3 Transform(const Vector3& point, const Matrix4x4& matrix) {
 }
 
 
+Vector3 Cross(const Vector3& v1, const Vector3& v2) {
+    return Vector3(
+        (v1.y * v2.z) - (v1.z * v2.y),
+        (v1.z * v2.x) - (v1.x * v2.z),
+        (v1.x * v2.y) - (v1.y * v2.x)
+    );
+}
+
+
+void TestCorss() {
+    Vector3 v1{ 1.2f, -3.9f, 2.5f };
+    Vector3 v2{ 2.8f, 0.4f, -1.3f };
+    VectorScreenPrintf(0, 0, Cross(v1, v2), "Cross");
+
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -368,7 +384,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             (int)screenVertices[2].x, (int)screenVertices[2].y,
             RED, kFillModeSolid);
 
-
+        TestCorss();
 
         // フレームの終了
         Novice::EndFrame();
