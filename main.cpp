@@ -15,6 +15,23 @@ struct Matrix4x4 {
     float m[4][4];
 };
 
+struct CameraObj {
+    Vector3 position;
+    Vector3 rotation;
+    Vector3 scale;
+};
+
+float Deg2Rad(float degree) {
+    // 2. 逆三角関数を使って、正確な円周率（π = 3.1415926...）を計算します。
+    // cos(π) = -1 利用し、std::acos(-1.0f) で精度の高い π を取得しています。
+    const float pi = std::acos(-1.0f);
+
+    // 3. 度数法（Degree）から弧度法（Radian）へ変換します。
+    // 公式：ラジアン = 度 × (π / 180)
+    // これにより、透視投影行列（MakePerspectiveFovMatrix）の引数として使える値になります。
+    return degree * (pi / 180.0f);
+}
+
 Matrix4x4 MakeIdentity4x4() {
     Matrix4x4 result{};
     for (int i = 0; i < 4; ++i) {
@@ -290,6 +307,100 @@ void TestCorss() {
 
 }
 
+void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
+    const float kGridHalfWidth = 2.0f;
+    const uint32_t kSubdivision = 10;
+    const float kGridEvery = (kGridHalfWidth * 2.0f) / (float)kSubdivision;
+    for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
+        float x = -kGridHalfWidth + ((float)xIndex * kGridEvery);
+        
+        Vector3 startWorld = {x, 0.0f, -kGridHalfWidth };
+        Vector3 endWord = { x, 0.0f, kGridHalfWidth };
+
+        Vector3 startNdc = Transform(startWorld, viewProjectionMatrix);
+        Vector3 startScreen = Transform(startNdc, viewportMatrix);
+
+        Vector3 endNdc = Transform(endWord, viewProjectionMatrix);
+        Vector3 endScreen = Transform(endNdc, viewportMatrix);
+
+        uint32_t color = 0xAAAAAAFF;
+        if (std::abs(x) < 0.001f) {
+            color = 0x000000FF;
+        }
+
+        Novice::DrawLine(
+            (int)startScreen.x, (int)startScreen.y,
+            (int)endScreen.x, (int)endScreen.y,
+            color
+        );
+    }
+
+    for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
+        float z = -kGridHalfWidth + ((float)zIndex * kGridEvery);
+
+        Vector3 startWorld = { -kGridHalfWidth, 0.0f,  z};
+        Vector3 endWord = { kGridHalfWidth, 0.0f,  z};
+
+        Vector3 startNdc = Transform(startWorld, viewProjectionMatrix);
+        Vector3 startScreen = Transform(startNdc, viewportMatrix);
+
+        Vector3 endNdc = Transform(endWord, viewProjectionMatrix);
+        Vector3 endScreen = Transform(endNdc, viewportMatrix);
+
+        uint32_t color = 0xAAAAAAFF;
+        if (std::abs(z) < 0.001f) {
+            color = 0x000000FF;
+        }
+
+        Novice::DrawLine(
+            (int)startScreen.x, (int)startScreen.y,
+            (int)endScreen.x, (int)endScreen.y,
+            color
+        );
+    }
+}
+
+void DrawGridV2(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
+    const float kGridHalfWidth = 2.0f;               // グリッドの半分の幅 (中心から端までの距離)
+    const uint32_t kSubdivision = 10;                // 分割数 (何マスに区切るか)
+    const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision); // 1マス分の幅 (0.4)
+
+    // 1つのループで縦線（Z軸平行）と横線（X軸平行）を同時に描画
+    for (uint32_t i = 0; i <= kSubdivision; ++i) {
+        // 現在の線が通る世界座標（World Space）上の位置（オフセット量）を計算
+        float value = -kGridHalfWidth + (float(i) * kGridEvery);
+
+        // 原点（軸線）に近い線は黒色(0x000000FF)、それ以外は薄い灰色(0xAAAAAAFF)に設定
+        uint32_t color = (std::abs(value) < 0.001f) ? 0x000000FF : 0xAAAAAAFF;
+
+        // ==========================================
+        // 1. 縦線の描画（Z軸に平行：X座標を固定し、Zの奥から手前へ繋ぐ）
+        // ==========================================
+        Vector3 startZ = { value, 0.0f, -kGridHalfWidth }; // 始点（奥）
+        Vector3 endZ = { value, 0.0f, kGridHalfWidth }; // 終点（手前）
+
+        // 世界座標 -> 3D空間（WVP変換） -> 画面ピクセル座標（ビューポート変換）へ一気に変換
+        Vector3 sScreenZ = Transform(Transform(startZ, viewProjectionMatrix), viewportMatrix);
+        Vector3 eScreenZ = Transform(Transform(endZ, viewProjectionMatrix), viewportMatrix);
+
+        // 2Dの画面上にラインを描画
+        Novice::DrawLine((int)sScreenZ.x, (int)sScreenZ.y, (int)eScreenZ.x, (int)eScreenZ.y, color);
+
+        // ==========================================
+        // 2. 横線の描画（X軸に平行：Z座標を固定し、Xの左から右へ繋ぐ）
+        // ==========================================
+        Vector3 startX = { -kGridHalfWidth, 0.0f, value }; // 始点（左）
+        Vector3 endX = { kGridHalfWidth, 0.0f, value }; // 終点（右）
+
+        // 同じく座標変換を行う
+        Vector3 sScreenX = Transform(Transform(startX, viewProjectionMatrix), viewportMatrix);
+        Vector3 eScreenX = Transform(Transform(endX, viewProjectionMatrix), viewportMatrix);
+
+        // 2Dの画面上にラインを描画
+        Novice::DrawLine((int)sScreenX.x, (int)sScreenX.y, (int)eScreenX.x, (int)eScreenX.y, color);
+    }
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -303,88 +414,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
     Vector3 rotate{};
     Vector3 translate{kScreenWidth / 2, kScreenHeight / 2, 0.0f};
-    Vector3 cameraPostion{};
-    Vector3 kLocalVertices[3] = {
-        { 0.0f, -50.0f, 0.0f },
-        { 50.0f, 50.0f, 0.0f },
-        { -50.0f, 50.0f, 0.0f }
+    CameraObj camera = {
+        { 0.0f, 3.5f, -7.0f },
+        { 0.4f, 0.0f, 0.0f },
+        { 1, 1, 1},
     };
 
+    float fovY = Deg2Rad(-45.0f);
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
 
-        Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, rotate, translate);
-        Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, cameraPostion);
+        // 1. カメラのワールド行列を計算し、その逆行列から「ビュー変換行列」を生成
+        // (世界空間の座標を、カメラから見た座標空間へ変換する)
+        Matrix4x4 cameraMatrix = MakeAffineMatrix(camera.scale, camera.rotation, camera.position);
         Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-        Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
-        Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+
+        // 2. アスペクト比を計算し、透視投影（ペルスペクティブ）による「プロジェクション変換行列」を生成
+        // (遠くのものを小さく、近くのものを大きく表現し、3D空間をクリッピング空間へ変換する)
+        float aspect = (float)kScreenWidth / (float)kScreenHeight; 
+        Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(fovY, aspect, 0.1f, 100.0f);
+
+        // 3. ビュー行列とプロジェクション行列を合成 (View-Projection 行列)
+        // (カメラの視点と画面への投影計算を一本化する)
+        Matrix4x4 viewProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
+
+        // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
-        Vector3 screenVertices[3];
-        for (int i = 0; i < 3; ++i) {
-            Vector3 ndcVertex = Transform(kLocalVertices[i], worldViewProjectionMatrix);
-            screenVertices[i] = Transform(ndcVertex, viewportMatrix);
-        }
 
         
 
         // フレームの開始
         Novice::BeginFrame();
 
-        if (keys[DIK_A] != 0) {
-            translate.x -= 1;
-        }
-
-        if (keys[DIK_D] != 0) {
-            translate.x += 1;
-        }
-
-        if (keys[DIK_W] != 0) {
-            translate.y -= 1;
-        }
-
-        if (keys[DIK_S] != 0) {
-            translate.y += 1;
-        }
-
-        if (keys[DIK_Q] != 0) {
-            rotate.z -= 0.01f;
-        }
-
-        if (keys[DIK_E] != 0) {
-            rotate.z += 0.01f;
-        }
-
-        if (keys[DIK_UP] != 0) {
-            rotate.x += 0.01f;
-        }
-
-        if (keys[DIK_DOWN] != 0) {
-            rotate.x -= 0.01f;
-        }
-
-        if (keys[DIK_LEFT] != 0) {
-            rotate.y-= 0.01f;
-        }
-
-        if (keys[DIK_RIGHT] != 0) {
-            rotate.y += 0.01f;
-        }
-
-
-
-
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        Novice::DrawTriangle(
-            (int)screenVertices[0].x, (int)screenVertices[0].y,
-            (int)screenVertices[1].x, (int)screenVertices[1].y,
-            (int)screenVertices[2].x, (int)screenVertices[2].y,
-            RED, kFillModeSolid);
-
-        TestCorss();
+        DrawGridV2(viewProjectionMatrix, viewportMatrix);
 
         // フレームの終了
         Novice::EndFrame();
