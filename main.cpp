@@ -1,5 +1,7 @@
 ﻿#include <Novice.h>
 #include <cmath>
+#define PI_M 3.14159265358979323846
+
 
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 const int kColumnCount = 60;
@@ -289,6 +291,12 @@ void TestCorss() {
     VectorScreenPrintf(0, 0, Cross(v1, v2), "Cross");
 
 }
+void AutoRotateY(Vector3& r) {
+    r.y += 0.01f;
+    if (r.y > PI_M) {
+        r.y = (float)-PI_M;
+    }
+}
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -377,6 +385,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
+
+        AutoRotateY(rotate);
 
         Novice::DrawTriangle(
             (int)screenVertices[0].x, (int)screenVertices[0].y,
