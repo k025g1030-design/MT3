@@ -61,6 +61,20 @@ Vector3 Perpendicular(const Vector3& vector) {
     return { 0.0f, -vector.z, vector.y };
 }
 
+/* ベクトルの正規化 */
+Vector3 Normalize(const Vector3& v) {
+    float length = Length(v);
+
+    // 長さが0（または極めて0に近い）場合の安全対策（NaN汚染の防止）
+    if (length == 0.0f) {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+
+    // 割り算を1回で済ませ、以降は掛け算を使用する（パフォーマンス最適化）
+    float invLength = 1.0f / length;
+    return { v.x * invLength, v.y * invLength, v.z * invLength };
+}
+
 /********************** ベクトル演算 (Vector Operations) ***************************/
 /* 単位行列 (Identity Matrix): */
 Matrix4x4 MakeIdentity4x4() {

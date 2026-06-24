@@ -21,8 +21,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Sphere pointSphere_1 = { { -2.0f, -1.0f, 0.0f }, 0.3f };
-    Sphere pointSphere_2 = { { 0.0f, 0.0f, 2.0f }, 0.5f};
+    Sphere sphere = { { -2.0f, -1.0f, 0.0f }, 0.3f };
+    Plane plane = { { 0, 1.0f, 0}, 1.0f };
 
     float fovY = Deg2Rad(-45.0f);
 
@@ -49,7 +49,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&pointSphere_1, &camera);
+        DebugWin(&sphere, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -57,14 +57,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
         DrawGridV2(viewProjectionMatrix, viewportMatrix);
         
-        uint32_t color = WHITE;
 
-        if (IsCollision(pointSphere_1, pointSphere_2)) {
+        uint32_t color = WHITE;
+        if (IsCollision(sphere, plane)) {
             color = RED;
         }
 
-        DrawSphere(pointSphere_1, viewProjectionMatrix, viewportMatrix, color);
-        DrawSphere(pointSphere_2, viewProjectionMatrix, viewportMatrix, color);
+        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+
+
+        DrawPlane(plane, viewProjectionMatrix, viewportMatrix, color);
         
 
         // フレームの終了

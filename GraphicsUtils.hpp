@@ -168,8 +168,45 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
     }
 }
 
-void DrawLine(Vector3 start, Vector3 end, uint32_t color) {
+void DrawLine(const Vector3& start, const Vector3& end, uint32_t color) {
     Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+}
+
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    // Zの役割 1 & 2: 空間基準と直交基底の構築
+    Vector3 center = Multiply(plane.distance, plane.normal);
+    Vector3 right = Normalize(Perpendicular(plane.normal));
+    Vector3 up = Cross(plane.normal, right);
+    float size = 2.0f; // 平面を描画する際のスケール
+
+    // 四隅の方向ベクトル乗数 (Ring Order: 左上, 右上, 右下, 左下)
+    const float signs[4][2] = {
+        { -1.0f, 1.0f },   // 0: Top-Left    (-right, +up)
+        { 1.0f, 1.0f },    // 1: Top-Right   (+right, +up)
+        { 1.0f, -1.0f },   // 2: Bottom-Right(+right, -up)
+        { -1.0f, -1.0f }   // 3: Bottom-Left (-right, -up)
+    };
+
+    Vector3 points[4];
+    for (uint32_t i = 0; i < 4; ++i) {
+        // 頂点の生成: 基準点に対して、rightとupを配列の符号に従って加算
+        Vector3 offset = Add(Multiply(size * signs[i][0], right), Multiply(size * signs[i][1], up));
+        Vector3 point = Add(center, offset);
+
+        // Zの役割: 透視投影のトリガー】
+        // point.z を透視除法の係数として消費し、スクリーン座標へ変換
+        points[i] = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
+    }
+
+
+    for (int i = 0; i < 4; ++i) {
+        // 次の頂点のインデックスを計算 (0->1, 1->2, 2->3, 3->0)
+        // 剰余演算 (%) を使うことで、3の次は0に戻るようにループを閉じる
+        int nextIndex = (i + 1) % 4;
+        // トポロジーの描画と Z の破棄
+        DrawLine(points[i], points[nextIndex], color);
+    }
+    
 }
 
 void DebugWin(Sphere* sphere, CameraObj* camera) {
