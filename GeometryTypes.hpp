@@ -22,23 +22,24 @@ struct Sphere {
     float radius;
 };
 
-struct Line {
-    Vector3 origin;  // 始点
-    Vector3 diff;    // 終点
-};
-
-struct Ray {
-    Vector3 origin;
-    Vector3 diff;
-};
-
-struct Segment {
-    Vector3 origin;
-    Vector3 diff;
-};
-
+// 注意事項：数学上、Plane（平面）は無限に広がるものとして扱われます。
+//          そのため、ここでは描画範囲や実体の大きさではなく、単純に数学的な判定だけを行っています。
 struct Plane {
     Vector3 normal; // 法線
     float distance; // 距離
 };
 
+
+
+// 線の種類を定義する列挙型
+enum class LineType {
+    Line,    // 直線（両方向に無限に伸びる線）
+    Ray,     // 光線・レイ（始点があり、一方向に無限に伸びる線）
+    Segment  // 線分（始点と終点がある有限の長さの線）
+};
+
+struct Line {
+    Vector3 origin;    // 始点
+    Vector3 diff;      // 方向ベクトル（または始点から終点へのベクトル）
+    LineType type;     // 線の種類
+};

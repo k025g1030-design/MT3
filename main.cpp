@@ -21,8 +21,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Sphere sphere = { { -2.0f, -1.0f, 0.0f }, 0.3f };
     Plane plane = { { 0, 1.0f, 0}, 1.0f };
+    Line line = {
+        { 0, 1.0f, 0 },
+        { 0, -1.0f, 0 },
+        LineType::Segment
+    };
 
     float fovY = Deg2Rad(-45.0f);
 
@@ -49,7 +53,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&sphere, &camera);
+        DebugWin(&line, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -59,12 +63,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(sphere, plane)) {
+        if (IsCollision(line, plane)) {
             color = RED;
         }
 
-        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
-
+        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
 
         DrawPlane(plane, viewProjectionMatrix, viewportMatrix, color);
         

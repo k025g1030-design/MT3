@@ -172,6 +172,12 @@ void DrawLine(const Vector3& start, const Vector3& end, uint32_t color) {
     Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
 }
 
+void DrawLine(const Line& line, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    Vector3 start = Transform(Transform(line.origin, viewProjectionMatrix), viewportMatrix);
+    Vector3 end = Transform(Transform(line.diff, viewProjectionMatrix), viewportMatrix);
+    DrawLine(start, end, color);
+}
+
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
     // Zの役割 1 & 2: 空間基準と直交基底の構築
     Vector3 center = Multiply(plane.distance, plane.normal);
@@ -209,12 +215,12 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
     
 }
 
-void DebugWin(Sphere* sphere, CameraObj* camera) {
+void DebugWin(Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("SphereCenter", &sphere->center.x, 0.01f);
-    //ImGui::DragFloat("SphereRadius", &sphere->radius, 0.01f);
+    ImGui::DragFloat3("LineOrigin", &line->origin.x, 0.01f);
+    ImGui::DragFloat3("LineDiff", &line->diff.x, 0.01f);
     ImGui::End();
 }
 
