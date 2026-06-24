@@ -32,3 +32,10 @@ bool IsCollision(const Sphere& s1, const Sphere& s2) {
     }
     return false;
 }
+
+bool IsCollision(const Sphere& s, const Plane& p) {
+    // 球の中心から平面までの符号付き距離を計算： (N・C) - d
+    float distToPlane = Dot(p.normal, s.center) - p.distance;
+    // 距離の絶対値が半径以下であれば衝突している
+    return std::abs(distToPlane) <= s.radius;
+}

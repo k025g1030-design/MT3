@@ -36,3 +36,8 @@ struct Segment {
     Vector3 origin;
     Vector3 diff;
 };
+
+struct Plane {
+    Vector3 normal; // 法線
+    float distance; // 距離
+};

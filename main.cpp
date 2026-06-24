@@ -21,15 +21,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-
-
     Sphere pointSphere_1 = { { -2.0f, -1.0f, 0.0f }, 0.3f };
     Sphere pointSphere_2 = { { 0.0f, 0.0f, 2.0f }, 0.5f};
 
-   
-
-    
-    
     float fovY = Deg2Rad(-45.0f);
 
     // ウィンドウの×ボタンが押されるまでループ
@@ -52,8 +46,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
 
-
-
         // フレームの開始
         Novice::BeginFrame();
 
@@ -66,6 +58,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         DrawGridV2(viewProjectionMatrix, viewportMatrix);
         
         uint32_t color = WHITE;
+
         if (IsCollision(pointSphere_1, pointSphere_2)) {
             color = RED;
         }

@@ -51,6 +51,16 @@ float Length(const Vector3& v) {
     return std::sqrtf(LengthSq(v));
 }
 
+/* 指定されたベクトルに直交するベクトルを生成する */
+Vector3 Perpendicular(const Vector3& vector) {
+    // XY平面上に成分を持つ場合は、その成分を入れ替えて直交ベクトルを算出
+    if (vector.x != 0.0f || vector.y != 0.0f) {
+        return { -vector.y, vector.x, 0.0f };
+    }
+    // Z軸と平行な場合はYZ平面の成分を使用して直交ベクトルを算出
+    return { 0.0f, -vector.z, vector.y };
+}
+
 /********************** ベクトル演算 (Vector Operations) ***************************/
 /* 単位行列 (Identity Matrix): */
 Matrix4x4 MakeIdentity4x4() {
@@ -172,3 +182,4 @@ Matrix4x4 Transpose(const Matrix4x4& m) {
     }
     return result;
 }
+
