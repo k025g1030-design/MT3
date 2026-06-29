@@ -306,14 +306,14 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 
 
 
-void DebugWin(AABB* aabb1, Sphere* sphere, CameraObj* camera) {
+void DebugWin(AABB* aabb1, Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
     ImGui::DragFloat3("aabb1.min", &aabb1->min.x, 0.01f);
     ImGui::DragFloat3("aabb1.max", &aabb1->max.x, 0.01f);
-    ImGui::DragFloat3("sphere.center", &sphere->center.x, 0.01f);
-    ImGui::DragFloat("sphere.radius", &sphere->radius, 0.01f);
+    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
+    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
     ImGui::End();
 }
 

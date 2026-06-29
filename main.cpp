@@ -23,12 +23,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     AABB aabb1 = {
         .min{-0.5f, -0.5f, -0.5f},
-        .max{0, 0, 0},
+        .max{0.5f, 0.5f, 0.5f },
     };
 
-    Sphere sphere = {
-        .center{ 1, 1, 1 },
-        .radius{ 1 },
+    Line line = {
+        .origin{ -0.7f, 0.3f, 0.0f},
+        .diff{ 2.0f, -0.5f, 0.0f },
+        .type{ LineType::Segment }
     };
 
 
@@ -57,7 +58,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&aabb1, &sphere, &camera);
+        DebugWin(&aabb1, &line, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -67,14 +68,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(aabb1, sphere)) {
+        if (IsCollision(aabb1, line)) {
             color = RED;
         }
 
         DrawAABB(aabb1, viewProjectionMatrix, viewportMatrix, color);
 
-        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
-        
+        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
 
         // フレームの終了
         Novice::EndFrame();

@@ -230,3 +230,69 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 
     return distanceSquared <= (sphere.radius * sphere.radius);
 }
+
+bool IsCollision(const AABB& aabb, const Line& line) {
+    constexpr float eps = 1e-6f;
+
+    float tMin = -std::numeric_limits<float>::infinity();
+    float tMax = std::numeric_limits<float>::infinity();
+
+    auto CheckAxis = [&](float origin, float diff, float minValue, float maxValue) -> bool {
+        // 線がこの軸方向にほぼ動かない場合
+        if (std::abs(diff) < eps) {
+            // origin が slab の外にあるなら交差しない
+            if (origin < minValue || origin > maxValue) {
+                return false;
+            }
+
+            // slab の中にあるなら、この軸では制限なし
+            return true;
+        }
+
+        float t1 = (minValue - origin) / diff;
+        float t2 = (maxValue - origin) / diff;
+
+        if (t1 > t2) {
+            std::swap(t1, t2);
+        }
+
+        tMin = max(tMin, t1);
+        tMax = min(tMax, t2);
+
+        // 進入時刻が退出時刻を超えたら交差しない
+        if (tMin > tMax) {
+            return false;
+        }
+
+        return true;
+        };
+
+    if (!CheckAxis(line.origin.x, line.diff.x, aabb.min.x, aabb.max.x)) {
+        return false;
+    }
+
+    if (!CheckAxis(line.origin.y, line.diff.y, aabb.min.y, aabb.max.y)) {
+        return false;
+    }
+
+    if (!CheckAxis(line.origin.z, line.diff.z, aabb.min.z, aabb.max.z)) {
+        return false;
+    }
+
+    // 線の種類ごとに t の範囲を制限する
+    if (line.type == LineType::Ray) {
+        // 射線は t >= 0 の範囲だけ有効
+        if (tMax < 0.0f) {
+            return false;
+        }
+    }
+
+    if (line.type == LineType::Segment) {
+        // 線分は 0 <= t <= 1 の範囲だけ有効
+        if (tMax < 0.0f || tMin > 1.0f) {
+            return false;
+        }
+    }
+
+    return true;
+}
