@@ -41,13 +41,14 @@ bool IsCollision(const Sphere& s, const Plane& p) {
 }
 
 // 線と平面の衝突判定関数
+// 
 bool IsCollision(const Line& line, const Plane& plane) {
 
     // 1. まず垂直判定を行うために、法線と線の内積を求める
     float dot = Dot(plane.normal, line.diff);
 
-    // 垂直＝平行であるので、衝突しているはずがない
-    if (dot == 0.0f) {
+    // 線が平面と平行であるため、通常は交差しない
+    if (std::abs(dot) < 1e-6f) {
         return false;
     }
 
@@ -72,4 +73,128 @@ bool IsCollision(const Line& line, const Plane& plane) {
     }
 
     return false;
+}
+
+bool IsCollision(const Line& line, const Triangle& triangle) {
+    // 1) 法線を計算する
+    Vector3 edge1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
+    Vector3 edge2 = Subtract(triangle.vertices[2], triangle.vertices[0]);
+    Vector3 normalize = Normalize(Cross(edge1, edge2));
+
+    // 2) 線と「三角形が乗っている無限平面」の交点を求める
+    float dot = Dot(normalize, line.diff);
+    if (std::abs(dot) < 1e-6f) {
+        return false; // 線が平面と平行であるため、通常は交差しない
+    }
+
+    // 平面の方程式のd（原点からの距離）を三角形の頂点から計算
+    float planeDistance = Dot(normalize, triangle.vertices[0]);
+    float t = (planeDistance - Dot(line.origin, normalize)) / dot;
+
+    // 線の種類（線分や射線）に応じて t の範囲をチェック
+    if (line.type == LineType::Segment && (t < 0.0f || t > 1.0f)) return false;
+    if (line.type == LineType::Ray && t < 0.0f) return false;
+
+    // 交点 p の3D座標を実際に計算する
+    Vector3 p = {
+        line.origin.x + t * line.diff.x,
+        line.origin.y + t * line.diff.y,
+        line.origin.z + t * line.diff.z
+    };
+
+    // 3) 【重構】交点 p が三角形の内側にあるか判定（ループ処理）
+    for (int i = 0; i < 3; i++) {
+        // 次の頂点のインデックスを計算 (0->1, 1->2, 2->0 と綺麗に循環します)
+        int next = (i + 1) % 3;
+
+        // 現在の辺のベクトルを計算
+        Vector3 v_edge = {
+            triangle.vertices[next].x - triangle.vertices[i].x,
+            triangle.vertices[next].y - triangle.vertices[i].y,
+            triangle.vertices[next].z - triangle.vertices[i].z
+        };
+
+        // 頂点から交差点pへのベクトルを計算
+        Vector3 v_p = {
+            p.x - triangle.vertices[next].x,
+            p.y - triangle.vertices[next].y,
+            p.z - triangle.vertices[next].z
+        };
+
+        // クロス積（外積）を取る
+        Vector3 crossVec = Cross(v_edge, v_p);
+
+        if (Dot(crossVec, normalize) < 0.0f) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// 線と平面多角形の衝突判定関数(平面凸多角形だけ)
+bool IsCollision(const Line& line, const PolygonV2& polygon) {
+    // 安全性チェック：頂点数が3未満の場合、多角形を構成できないため終了
+    size_t numVertices = polygon.vertices.size();
+    if (numVertices < 3) {
+        return false;
+    }
+
+    // 1) 法線を計算する（何角形であっても、最初の3頂点から平面の法線を決定できる）
+    Vector3 edge1 = Subtract(polygon.vertices[1], polygon.vertices[0]);
+    Vector3 edge2 = Subtract(polygon.vertices[2], polygon.vertices[0]);
+    Vector3 normalize = Normalize(Cross(edge1, edge2));
+
+    // 2) 線と「多角形が乗っている無限平面」の交点（パラメータ t）を求める
+    float dot = Dot(normalize, line.diff);
+    if (std::abs(dot) < 1e-6f) {
+        return false; // 線が平面と平行であるため、通常は交差しない
+    }
+
+    // 平面の方程式のd（原点からの距離）を多角形の最初の頂点から計算
+    float planeDistance = Dot(normalize, polygon.vertices[0]);
+    float t = (planeDistance - Dot(line.origin, normalize)) / dot;
+
+    // 線の種類（線分や射線）に応じて t の有効範囲をチェック
+    if (line.type == LineType::Segment && (t < 0.0f || t > 1.0f)) return false;
+    if (line.type == LineType::Ray && t < 0.0f) return false;
+
+    // 交差点 p の3D空間上の座標を実際に計算する (P = O + t * d)
+    Vector3 p = {
+        line.origin.x + t * line.diff.x,
+        line.origin.y + t * line.diff.y,
+        line.origin.z + t * line.diff.z
+    };
+
+    // 3) 交差点 p が多角形の内側にあるか判定（抽象化されたループ処理）
+    for (size_t i = 0; i < numVertices; i++) {
+        // 次の頂点のインデックス（最後の頂点の場合は 0 に戻って循環させる）
+        size_t next = (i + 1) % numVertices;
+
+        // 現在の辺のベクトルを計算 (v_i -> v_next)
+        Vector3 v_edge = {
+            polygon.vertices[next].x - polygon.vertices[i].x,
+            polygon.vertices[next].y - polygon.vertices[i].y,
+            polygon.vertices[next].z - polygon.vertices[i].z
+        };
+
+        // 頂点から交差点 p へのベクトルを計算 (v_next -> p)
+        Vector3 v_p = {
+            p.x - polygon.vertices[next].x,
+            p.y - polygon.vertices[next].y,
+            p.z - polygon.vertices[next].z
+        };
+
+        // クロス積（外積）を計算する
+        Vector3 crossVec = Cross(v_edge, v_p);
+
+        // 早期離脱（Early Return）：
+        // 交差点がどれか1つの辺に対しても外側にあれば（内積 < 0）、衝突していないため即座に終了
+        if (Dot(crossVec, normalize) < 0.0f) {
+            return false;
+        }
+    }
+
+    // すべての辺の内側にあれば衝突（ポリゴンの内部にヒット）
+    return true;
 }

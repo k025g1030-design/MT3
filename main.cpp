@@ -21,7 +21,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Plane plane = { { 0, 1.0f, 0}, 1.0f };
+    Triangle triangle = {
+        { { 2, 1, 0 },
+        { 1, 0, 1 },
+        { 1, 1, 1 }, }
+    };
     Line line = {
         { 0, 1.0f, 0 },
         { 0, -1.0f, 0 },
@@ -63,13 +67,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(line, plane)) {
+        if (IsCollision(line, triangle)) {
             color = RED;
         }
 
         DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
 
-        DrawPlane(plane, viewProjectionMatrix, viewportMatrix, color);
+        DrawTriangle(triangle, viewProjectionMatrix, viewportMatrix, color);
         
 
         // フレームの終了

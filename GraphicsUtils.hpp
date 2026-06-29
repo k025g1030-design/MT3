@@ -29,6 +29,16 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& m, const char* label) {
     }
 }
 
+void DrawLine(const Vector3& start, const Vector3& end, uint32_t color) {
+    Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+}
+
+void DrawLine(const Line& line, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    Vector3 start = Transform(Transform(line.origin, viewProjectionMatrix), viewportMatrix);
+    Vector3 end = Transform(Transform(line.diff, viewProjectionMatrix), viewportMatrix);
+    DrawLine(start, end, color);
+}
+
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
     const float kGridHalfWidth = 2.0f;
     const uint32_t kSubdivision = 10;
@@ -50,11 +60,7 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
             color = 0x000000FF;
         }
 
-        Novice::DrawLine(
-            (int)startScreen.x, (int)startScreen.y,
-            (int)endScreen.x, (int)endScreen.y,
-            color
-        );
+        DrawLine(startScreen, endScreen, color );
     }
 
     for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
@@ -74,11 +80,7 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
             color = 0x000000FF;
         }
 
-        Novice::DrawLine(
-            (int)startScreen.x, (int)startScreen.y,
-            (int)endScreen.x, (int)endScreen.y,
-            color
-        );
+        DrawLine(startScreen, endScreen, color);
     }
 }
 
@@ -119,7 +121,7 @@ void DrawGridV2(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewport
         Vector3 eScreenX = Transform(Transform(endX, viewProjectionMatrix), viewportMatrix);
 
         // 2Dの画面上にラインを描画
-        Novice::DrawLine((int)sScreenX.x, (int)sScreenX.y, (int)eScreenX.x, (int)eScreenX.y, color);
+        DrawLine(sScreenX, eScreenX, color);
     }
 }
 
@@ -162,20 +164,63 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
             Vector3 cScreen = Transform(Transform(c, viewProjectionMatrix), viewportMatrix);
 
             // ab, acで線を引く (ワイヤーフレームの四角形を構成する2辺)
-            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)bScreen.x, (int)bScreen.y, color);
-            Novice::DrawLine((int)aScreen.x, (int)aScreen.y, (int)cScreen.x, (int)cScreen.y, color);
+            DrawLine(aScreen, bScreen, color);
+            DrawLine(aScreen, cScreen, color);
         }
     }
 }
 
-void DrawLine(const Vector3& start, const Vector3& end, uint32_t color) {
-    Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
+
+
+void DrawPolygon(const PolygonV2& polygon, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    // 安全性チェック：頂点数が3未満（多角形を形成できない）の場合は描画しない
+    size_t numVertices = polygon.vertices.size();
+    if (numVertices < 3) {
+        return;
+    }
+
+    // スクリーン座標に変換された頂点を格納する動的配列
+    std::vector<Vector3> screenPoints(numVertices);
+
+    // 1) 座標変換ループ: すべての頂点を3D世界空間からスクリーン空間へ
+    for (size_t i = 0; i < numVertices; ++i) {
+        // 視点・投影変換マトリックスを適用
+        Vector3 projected = Transform(polygon.vertices[i], viewProjectionMatrix);
+
+        // ビューポートマトリックスを適用し、最終的なスクリーン座標（ピクセル単位）を算出
+        // ※この内部で Z の消費（透視除法）が行われます
+        screenPoints[i] = Transform(projected, viewportMatrix);
+    }
+
+    // 2) 描画ループ: 変換されたスクリーン座標を線で結んで閉じた多角形を作る
+    for (size_t i = 0; i < numVertices; ++i) {
+        // 次の頂点のインデックスを計算
+        // 剰余演算（%）を使うことで、最後の頂点の次は 0（最初の頂点）に戻り、ループが閉じる
+        size_t nextIndex = (i + 1) % numVertices;
+
+        // トポロジーの描画（隣り合う頂点同士を線分で結ぶ）
+        DrawLine(screenPoints[i], screenPoints[nextIndex], color);
+    }
 }
 
-void DrawLine(const Line& line, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-    Vector3 start = Transform(Transform(line.origin, viewProjectionMatrix), viewportMatrix);
-    Vector3 end = Transform(Transform(line.diff, viewProjectionMatrix), viewportMatrix);
-    DrawLine(start, end, color);
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    Vector3 screenPoints[3];
+
+    // 1) 座標変換: 3つの頂点を3D空間から2Dスクリーン空間へ
+    for (int i = 0; i < 3; ++i) {
+        // ビュー・プロジェクション変換（カメラ空間 -> クリップ空間へ）
+        Vector3 projected = Transform(triangle.vertices[i], viewProjectionMatrix);
+
+        // ビューポート変換（クリップ空間 -> スクリーンピクセル座標へ）
+        // ※この Transform の内部で Z の消費（透視除法）が行われている前提です
+        screenPoints[i] = Transform(projected, viewportMatrix);
+    }
+
+    // 2) 描画: 頂点を結んで三角形のトポロジー（ワイヤーフレーム）を構築
+    // 動的な for ループや剰余演算（%）を使わず、直接展開して処理を高速化（Loop Unrolling）
+    DrawLine(screenPoints[0], screenPoints[1], color);
+    DrawLine(screenPoints[1], screenPoints[2], color);
+    DrawLine(screenPoints[2], screenPoints[0], color); // 最後に始点へ戻って閉じる
 }
 
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
@@ -214,6 +259,8 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
     }
     
 }
+
+
 
 void DebugWin(Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");

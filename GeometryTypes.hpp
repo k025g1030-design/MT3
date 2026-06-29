@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 /**
  * 純粋な「データコンテナ」の定義。状態を保持するだけで、計算ロジック（振る舞い）を一切持たない最下層のデータ構造です。
  **/
@@ -42,4 +43,12 @@ struct Line {
     Vector3 origin;    // 始点
     Vector3 diff;      // 方向ベクトル（または始点から終点へのベクトル）
     LineType type;     // 線の種類
+};
+
+struct Triangle {
+    Vector3 vertices[3]; //頂点
+};
+
+struct PolygonV2 {
+    std::vector<Vector3> vertices;  //N個の頂点を格納（時計回り、または反時計回りに整列していること）
 };
