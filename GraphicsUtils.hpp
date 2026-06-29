@@ -260,14 +260,60 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
     
 }
 
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    // 1) AABB の min と max から、3D空間上の8つの頂点を構築する
+    Vector3 localVertices[8];
+
+    // 手前側の4頂点 (Z = min.z)
+    localVertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z }; // 左下奥
+    localVertices[1] = { aabb.max.x, aabb.min.y, aabb.min.z }; // 右下奥
+    localVertices[2] = { aabb.min.x, aabb.max.y, aabb.min.z }; // 左上奥
+    localVertices[3] = { aabb.max.x, aabb.max.y, aabb.min.z }; // 右上奥
+
+    // 奥側の4頂点 (Z = max.z)
+    localVertices[4] = { aabb.min.x, aabb.min.y, aabb.max.z }; // 左下手前
+    localVertices[5] = { aabb.max.x, aabb.min.y, aabb.max.z }; // 右下手前
+    localVertices[6] = { aabb.min.x, aabb.max.y, aabb.max.z }; // 左上手前
+    localVertices[7] = { aabb.max.x, aabb.max.y, aabb.max.z }; // 右上手前
+
+    // 2) 座標変換: 8つの頂点を3D空間から2Dスクリーン空間へ
+    Vector3 screenPoints[8];
+    for (int i = 0; i < 8; ++i) {
+        Vector3 projected = Transform(localVertices[i], viewProjectionMatrix);
+        screenPoints[i] = Transform(projected, viewportMatrix);
+    }
+
+    // 3) 描画: 12本の辺を結んでワイヤーフレームの立方体を構築
+
+    // 手前側の面 (Z = min.z の四角形)
+    DrawLine(screenPoints[0], screenPoints[1], color);
+    DrawLine(screenPoints[1], screenPoints[3], color);
+    DrawLine(screenPoints[3], screenPoints[2], color);
+    DrawLine(screenPoints[2], screenPoints[0], color);
+
+    // 奥側の面 (Z = max.z の四角形)
+    DrawLine(screenPoints[4], screenPoints[5], color);
+    DrawLine(screenPoints[5], screenPoints[7], color);
+    DrawLine(screenPoints[7], screenPoints[6], color);
+    DrawLine(screenPoints[6], screenPoints[4], color);
+
+    // 手前と奥を繋ぐ4本の柱（縦の辺）
+    DrawLine(screenPoints[0], screenPoints[4], color);
+    DrawLine(screenPoints[1], screenPoints[5], color);
+    DrawLine(screenPoints[2], screenPoints[6], color);
+    DrawLine(screenPoints[3], screenPoints[7], color);
+}
 
 
-void DebugWin(Line* line, CameraObj* camera) {
+
+void DebugWin(AABB* aabb1, AABB* aabb2, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("LineOrigin", &line->origin.x, 0.01f);
-    ImGui::DragFloat3("LineDiff", &line->diff.x, 0.01f);
+    ImGui::DragFloat3("aabb1.min", &aabb1->min.x, 0.01f);
+    ImGui::DragFloat3("aabb1.max", &aabb1->max.x, 0.01f);
+    ImGui::DragFloat3("aabb2.min", &aabb2->min.x, 0.01f);
+    ImGui::DragFloat3("aabb2.max", &aabb2->max.x, 0.01f);
     ImGui::End();
 }
 

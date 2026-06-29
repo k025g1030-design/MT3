@@ -21,16 +21,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Triangle triangle = {
-        { { 2, 1, 0 },
-        { 1, 0, 1 },
-        { 1, 1, 1 }, }
+    AABB aabb1 = {
+        .min{-0.5f, -0.5f, -0.5f},
+        .max{0, 0, 0},
     };
-    Line line = {
-        { 0, 1.0f, 0 },
-        { 0, -1.0f, 0 },
-        LineType::Segment
+
+    AABB aabb2 = {
+        .min{0.2f, 0.2f, 0.2f},
+        .max{1, 1, 1},
     };
+
 
     float fovY = Deg2Rad(-45.0f);
 
@@ -57,7 +57,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&line, &camera);
+        DebugWin(&aabb1, &aabb2, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -67,13 +67,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(line, triangle)) {
+        if (IsCollision(aabb1, aabb2)) {
             color = RED;
         }
 
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
+        DrawAABB(aabb1, viewProjectionMatrix, viewportMatrix, color);
+        DrawAABB(aabb2, viewProjectionMatrix, viewportMatrix, color);
 
-        DrawTriangle(triangle, viewProjectionMatrix, viewportMatrix, color);
         
 
         // フレームの終了

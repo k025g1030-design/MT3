@@ -45,10 +45,16 @@ struct Line {
     LineType type;     // 線の種類
 };
 
+// 注意事項：ゲームエンジンにとって、すべての3D平面は三角形で構成されています。
 struct Triangle {
-    Vector3 vertices[3]; //頂点
+    Vector3 vertices[3]; // 頂点
 };
 
 struct PolygonV2 {
-    std::vector<Vector3> vertices;  //N個の頂点を格納（時計回り、または反時計回りに整列していること）
+    std::vector<Vector3> vertices;  // N個の頂点を格納（時計回り、または反時計回りに整列していること）
+};
+
+struct AABB {
+    Vector3 min; // 最小点
+    Vector3 max; // 最大点
 };
