@@ -214,3 +214,19 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 
     return true;
 }
+
+bool IsCollision(const AABB& aabb, const Sphere& sphere) {
+    float closestX = max(aabb.min.x, min(sphere.center.x, aabb.max.x));
+    float closestY = max(aabb.min.y, min(sphere.center.y, aabb.max.y));
+    float closestZ = max(aabb.min.z, min(sphere.center.z, aabb.max.z));
+
+    float distanceX = sphere.center.x - closestX;
+    float distanceY = sphere.center.y - closestY;
+    float distanceZ = sphere.center.z - closestZ;
+
+    float distanceSquared = (distanceX * distanceX) +
+        (distanceY * distanceY) +
+        (distanceZ * distanceZ);
+
+    return distanceSquared <= (sphere.radius * sphere.radius);
+}
