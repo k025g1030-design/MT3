@@ -1,7 +1,9 @@
 #pragma once
+#include <algorithm>
 #include "GeometryTypes.hpp"
 #include "Algebra.hpp"
 #include "MathUtility.hpp"
+
 /**
  * 幾何学的なプリミティブ（線分、球など）間の空間的関係、最短距離の計算、および交差（衝突）判定を行う。
  */
@@ -240,12 +242,9 @@ bool IsCollision(const AABB& aabb, const Line& line) {
     auto CheckAxis = [&](float origin, float diff, float minValue, float maxValue) -> bool {
         // 線がこの軸方向にほぼ動かない場合
         if (std::abs(diff) < eps) {
-            // origin が slab の外にあるなら交差しない
             if (origin < minValue || origin > maxValue) {
                 return false;
             }
-
-            // slab の中にあるなら、この軸では制限なし
             return true;
         }
 
@@ -256,8 +255,10 @@ bool IsCollision(const AABB& aabb, const Line& line) {
             std::swap(t1, t2);
         }
 
-        tMin = max(tMin, t1);
-        tMax = min(tMax, t2);
+        // 修正箇所: std:: 名前空間を明記
+
+        tMin = (std::max)(tMin, t1);
+        tMax = (std::min)(tMax, t2);
 
         // 進入時刻が退出時刻を超えたら交差しない
         if (tMin > tMax) {
@@ -267,31 +268,16 @@ bool IsCollision(const AABB& aabb, const Line& line) {
         return true;
         };
 
-    if (!CheckAxis(line.origin.x, line.diff.x, aabb.min.x, aabb.max.x)) {
-        return false;
-    }
+    if (!CheckAxis(line.origin.x, line.diff.x, aabb.min.x, aabb.max.x)) return false;
+    if (!CheckAxis(line.origin.y, line.diff.y, aabb.min.y, aabb.max.y)) return false;
+    if (!CheckAxis(line.origin.z, line.diff.z, aabb.min.z, aabb.max.z)) return false;
 
-    if (!CheckAxis(line.origin.y, line.diff.y, aabb.min.y, aabb.max.y)) {
-        return false;
-    }
-
-    if (!CheckAxis(line.origin.z, line.diff.z, aabb.min.z, aabb.max.z)) {
-        return false;
-    }
-
-    // 線の種類ごとに t の範囲を制限する
     if (line.type == LineType::Ray) {
-        // 射線は t >= 0 の範囲だけ有効
-        if (tMax < 0.0f) {
-            return false;
-        }
+        if (tMax < 0.0f) return false;
     }
 
     if (line.type == LineType::Segment) {
-        // 線分は 0 <= t <= 1 の範囲だけ有効
-        if (tMax < 0.0f || tMin > 1.0f) {
-            return false;
-        }
+        if (tMax < 0.0f || tMin > 1.0f) return false;
     }
 
     return true;
