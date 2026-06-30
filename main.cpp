@@ -49,7 +49,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&pointSphere_1, &camera);
+        DebugWin(&pointSphere_1, &pointSphere_2, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);

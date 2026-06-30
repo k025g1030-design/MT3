@@ -172,12 +172,14 @@ void DrawLine(Vector3 start, Vector3 end, uint32_t color) {
     Novice::DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y, color);
 }
 
-void DebugWin(Sphere* sphere, CameraObj* camera) {
+void DebugWin(Sphere* sphere1, Sphere* sphere2, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("SphereCenter", &sphere->center.x, 0.01f);
-    //ImGui::DragFloat("SphereRadius", &sphere->radius, 0.01f);
+    ImGui::DragFloat3("sphere1.center", &sphere1->center.x, 0.01f);
+    ImGui::DragFloat("sphere1.radius", &sphere1->radius, 0.01f);
+    ImGui::DragFloat3("sphere2.center", &sphere2->center.x, 0.01f);
+    ImGui::DragFloat("sphere2.radius", &sphere2->radius, 0.01f);
     ImGui::End();
 }
 
