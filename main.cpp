@@ -14,16 +14,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     };
 
     auto AABBMinMax = [](AABB& aabb) {
-        aabb.min.x = (std::min)(aabb.min.x, aabb.max.x);
-        aabb.max.x = (std::max)(aabb.min.x, aabb.max.x);
-
-        aabb.min.y = (std::min)(aabb.min.y, aabb.max.y);
-        aabb.max.y = (std::max)(aabb.min.y, aabb.max.y);
-
-        aabb.min.z = (std::min)(aabb.min.z, aabb.max.z);
-        aabb.max.z = (std::max)(aabb.min.z, aabb.max.z);
+        if (aabb.min.x > aabb.max.x) std::swap(aabb.min.x, aabb.max.x);
+        if (aabb.min.y > aabb.max.y) std::swap(aabb.min.y, aabb.max.y);
+        if (aabb.min.z > aabb.max.z) std::swap(aabb.min.z, aabb.max.z);
         return aabb;
-        };
+    };
 
 
     // ライブラリの初期化
