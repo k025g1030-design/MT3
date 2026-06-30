@@ -2,6 +2,7 @@
 #include "GeometryTypes.hpp"
 #include "Algebra.hpp"
 #include "MathUtility.hpp"
+#include <algorithm>
 /**
  * 幾何学的なプリミティブ（線分、球など）間の空間的関係、最短距離の計算、および交差（衝突）判定を行う。
  */
