@@ -31,6 +31,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         .max{1, 1, 1},
     };
 
+    auto AABBMinMax = [](AABB& aabb) {
+        aabb.min.x = (std::min)(aabb.min.x, aabb.max.x);
+        aabb.max.x = (std::max)(aabb.min.x, aabb.max.x);
+
+        aabb.min.y = (std::min)(aabb.min.y, aabb.max.y);
+        aabb.max.y = (std::max)(aabb.min.y, aabb.max.y);
+
+        aabb.min.z = (std::min)(aabb.min.z, aabb.max.z);
+        aabb.max.z = (std::max)(aabb.min.z, aabb.max.z);
+        return aabb;
+    };
+
 
     float fovY = Deg2Rad(-45.0f);
 
@@ -58,6 +70,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Novice::BeginFrame();
 
         DebugWin(&aabb1, &aabb2, &camera);
+        aabb1 = AABBMinMax(aabb1);
+        aabb2 = AABBMinMax(aabb2);
+
+        
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);

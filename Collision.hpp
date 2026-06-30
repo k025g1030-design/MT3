@@ -200,6 +200,8 @@ bool IsCollision(const Line& line, const PolygonV2& polygon) {
 }
 
 bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
+    
+
     if (aabb1.max.x < aabb2.min.x || aabb1.min.x > aabb2.max.x) {
         return false;
     }
