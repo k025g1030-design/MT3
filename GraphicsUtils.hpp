@@ -262,12 +262,17 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 
 
 
-void DebugWin(Line* line, CameraObj* camera) {
+void DebugWin(Triangle* triangle, Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("LineOrigin", &line->origin.x, 0.01f);
-    ImGui::DragFloat3("LineDiff", &line->diff.x, 0.01f);
+
+    ImGui::DragFloat3("triangle.vertices.0", &triangle->vertices[0].x, 0.01f);
+    ImGui::DragFloat3("triangle.vertices.1", &triangle->vertices[1].x, 0.01f);
+    ImGui::DragFloat3("triangle.vertices.2", &triangle->vertices[2].x, 0.01f);
+
+    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
+    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
     ImGui::End();
 }
 
