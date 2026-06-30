@@ -21,15 +21,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    AABB aabb1 = {
-        .min{-0.5f, -0.5f, -0.5f},
-        .max{0.5f, 0.5f, 0.5f },
+    Vector3 rotate{ 0, 0, 0 };
+
+    OBB obb{
+        .center{-1.0f, 0, 0},
+        .orientations {
+            {1, 0, 0},
+            {0, 1, 0},
+            {0, 0, 1},
+        },
+        .size{0.5f, 0.5f, 0.5f}
     };
 
-    Line line = {
-        .origin{ -0.7f, 0.3f, 0.0f},
-        .diff{ 2.0f, -0.5f, 0.0f },
-        .type{ LineType::Segment }
+    Sphere sphere{
+        .center{ 0, 0, 0 },
+        .radius{ 0.5f }
     };
 
 
@@ -54,11 +60,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
+        // rotate
+        Matrix4x4 rotateMatrix = Multiply(MakeRotateXMatrix(rotate.x), Multiply(MakeRotateYMatrix(rotate.y), MakeRotateZMatrix(rotate.z)));
+        obb.orientations[0].x = rotateMatrix.m[0][0];
+        obb.orientations[0].y = rotateMatrix.m[0][1];
+        obb.orientations[0].z = rotateMatrix.m[0][2];
+
+        obb.orientations[1].x = rotateMatrix.m[1][0];
+        obb.orientations[1].y = rotateMatrix.m[1][1];
+        obb.orientations[1].z = rotateMatrix.m[1][2];
+
+        obb.orientations[2].x = rotateMatrix.m[2][0];
+        obb.orientations[2].y = rotateMatrix.m[2][1];
+        obb.orientations[2].z = rotateMatrix.m[2][2];
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&aabb1, &line, &camera);
+        DebugWin(&rotate, &obb, &sphere, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -68,14 +87,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(aabb1, line)) {
+        if (IsCollision(obb, sphere)) {
             color = RED;
         }
 
-        DrawAABB(aabb1, viewProjectionMatrix, viewportMatrix, color);
-
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
-
+        DrawOBB(obb, viewProjectionMatrix, viewportMatrix, color);
+        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+        
         // フレームの終了
         Novice::EndFrame();
 

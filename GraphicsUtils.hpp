@@ -304,16 +304,102 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
     DrawLine(screenPoints[3], screenPoints[7], color);
 }
 
+void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+   
+    // OBB の各軸方向ベクトル
+    Vector3 axisX = {obb.orientations[0].x * obb.size.x, obb.orientations[0].y * obb.size.x, obb.orientations[0].z * obb.size.x};
+    Vector3 axisY = {obb.orientations[1].x * obb.size.y, obb.orientations[1].y * obb.size.y, obb.orientations[1].z * obb.size.y};
+    Vector3 axisZ = {obb.orientations[2].x * obb.size.z, obb.orientations[2].y * obb.size.z,obb.orientations[2].z * obb.size.z};
+
+    Vector3 vertices[8];
+
+    // 8頂点を作成
+    vertices[0] = {
+        obb.center.x - axisX.x - axisY.x - axisZ.x,
+        obb.center.y - axisX.y - axisY.y - axisZ.y,
+        obb.center.z - axisX.z - axisY.z - axisZ.z
+    };
+    vertices[1] = {
+        obb.center.x + axisX.x - axisY.x - axisZ.x,
+        obb.center.y + axisX.y - axisY.y - axisZ.y,
+        obb.center.z + axisX.z - axisY.z - axisZ.z
+    };
+    vertices[2] = {
+        obb.center.x + axisX.x + axisY.x - axisZ.x,
+        obb.center.y + axisX.y + axisY.y - axisZ.y,
+        obb.center.z + axisX.z + axisY.z - axisZ.z
+    };
+    vertices[3] = {
+        obb.center.x - axisX.x + axisY.x - axisZ.x,
+        obb.center.y - axisX.y + axisY.y - axisZ.y,
+        obb.center.z - axisX.z + axisY.z - axisZ.z
+    };
+    vertices[4] = {
+        obb.center.x - axisX.x - axisY.x + axisZ.x,
+        obb.center.y - axisX.y - axisY.y + axisZ.y,
+        obb.center.z - axisX.z - axisY.z + axisZ.z
+    };
+    vertices[5] = {
+        obb.center.x + axisX.x - axisY.x + axisZ.x,
+        obb.center.y + axisX.y - axisY.y + axisZ.y,
+        obb.center.z + axisX.z - axisY.z + axisZ.z
+    };
+    vertices[6] = {
+        obb.center.x + axisX.x + axisY.x + axisZ.x,
+        obb.center.y + axisX.y + axisY.y + axisZ.y,
+        obb.center.z + axisX.z + axisY.z + axisZ.z
+    };
+    vertices[7] = {
+        obb.center.x - axisX.x + axisY.x + axisZ.x,
+        obb.center.y - axisX.y + axisY.y + axisZ.y,
+        obb.center.z - axisX.z + axisY.z + axisZ.z
+    };
+
+    // スクリーン座標へ変換
+    Vector3 screenVertices[8];
+
+    for (int i = 0; i < 8; i++) {
+        Vector3 ndc = Transform(vertices[i], viewProjectionMatrix);
+        screenVertices[i] = Transform(ndc, viewportMatrix);
+    }
+
+    // OBB の 12 辺
+    const int edges[12][2] = {
+        // 手前側、または -Z 側
+        { 0, 1 },
+        { 1, 2 },
+        { 2, 3 },
+        { 3, 0 },
+
+        // 奥側、または +Z 側
+        { 4, 5 },
+        { 5, 6 },
+        { 6, 7 },
+        { 7, 4 },
+
+        // 前後をつなぐ辺
+        { 0, 4 },
+        { 1, 5 },
+        { 2, 6 },
+        { 3, 7 },
+    };
+
+    for (int i = 0; i < 12; i++) {
+        DrawLine(screenVertices[edges[i][0]], screenVertices[edges[i][1]], color);
+    }
+}
 
 
-void DebugWin(AABB* aabb1, Line* line, CameraObj* camera) {
+
+void DebugWin(Vector3* rotate, OBB* obb, Sphere* sphere, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("aabb1.min", &aabb1->min.x, 0.01f);
-    ImGui::DragFloat3("aabb1.max", &aabb1->max.x, 0.01f);
-    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
-    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
+    ImGui::DragFloat3("obb.center", &obb->center.x, 0.01f);
+    ImGui::DragFloat3("obb.size", &obb->size.x, 0.01f);
+    ImGui::DragFloat3("rotate", &rotate->x, 0.01f);
+    ImGui::DragFloat3("sphere.center", &sphere->center.x, 0.01f);
+    ImGui::DragFloat("sphere.radius", &sphere->radius, 0.01f);
     ImGui::End();
 }
 

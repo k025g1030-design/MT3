@@ -296,3 +296,40 @@ bool IsCollision(const AABB& aabb, const Line& line) {
 
     return true;
 }
+
+bool IsCollision(const OBB& obb, const Sphere& sphere) {
+    // 1)球心からOBBの中心への方向ベクトルを計算
+    Vector3 dir = {
+        sphere.center.x - obb.center.x,
+        sphere.center.y - obb.center.y,
+        sphere.center.z - obb.center.z
+    };
+
+    Vector3 closestPoint = obb.center;
+
+    float extents[3] = { obb.size.x, obb.size.y, obb.size.z };
+
+    // 2)方向ベクトルをOBBの各ローカル軸に射影し、境界内にクランプする
+    for (int i = 0; i < 3; ++i) {
+        // ベクトル dir を OBB の i 番目の軸に射影した距離
+        float dist = Dot(dir, obb.orientations[i]);
+
+        dist = max(-extents[i], min(dist, extents[i]));
+
+        // クランプされた距離を使って最近点の座標を更新
+        closestPoint.x += dist * obb.orientations[i].x;
+        closestPoint.y += dist * obb.orientations[i].y;
+        closestPoint.z += dist * obb.orientations[i].z;
+    }
+
+    // 3)算出された最近点と球心との距離の平方を計算
+    Vector3 v = {
+        sphere.center.x - closestPoint.x,
+        sphere.center.y - closestPoint.y,
+        sphere.center.z - closestPoint.z
+    };
+    float distanceSquared = Dot(v, v);
+
+    // 4)距離の平方と半径の平方を比較
+    return distanceSquared <= (sphere.radius * sphere.radius);
+}
