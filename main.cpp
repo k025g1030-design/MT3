@@ -55,6 +55,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Novice::BeginFrame();
 
         DebugWin(&line, &plane, &camera);
+        plane.normal = Normalize(plane.normal);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -64,7 +65,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(sphere, plane)) {
+        if (IsCollision(line, plane)) {
             color = RED;
         }
 
