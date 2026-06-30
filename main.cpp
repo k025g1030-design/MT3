@@ -55,6 +55,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Novice::BeginFrame();
 
         DebugWin(&sphere, &plane, &camera);
+        plane.normal = Normalize(plane.normal);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
