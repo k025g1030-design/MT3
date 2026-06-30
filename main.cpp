@@ -54,7 +54,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&sphere, &plane, &camera);
+        DebugWin(&line, &plane, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -68,7 +68,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             color = RED;
         }
 
-        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
 
         DrawPlane(plane, viewProjectionMatrix, viewportMatrix, color);
         

@@ -215,13 +215,13 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
     
 }
 
-void DebugWin(Sphere* sphere, Plane* plane, CameraObj* camera) {
+void DebugWin(Line* line, Plane* plane, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
     ImGui::DragFloat3("plane.normal", &plane->normal.x, 0.01f);
-    ImGui::DragFloat3("sphere.center", &sphere->center.x, 0.01f);
-    ImGui::DragFloat3("sphere.radius", &sphere->radius, 0.01f);
+    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
+    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
     ImGui::End();
 }
 
