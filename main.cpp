@@ -13,6 +13,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         { 1, 1, 1 },
     };
 
+    auto AABBMinMax = [](AABB& aabb) {
+        aabb.min.x = (std::min)(aabb.min.x, aabb.max.x);
+        aabb.max.x = (std::max)(aabb.min.x, aabb.max.x);
+
+        aabb.min.y = (std::min)(aabb.min.y, aabb.max.y);
+        aabb.max.y = (std::max)(aabb.min.y, aabb.max.y);
+
+        aabb.min.z = (std::min)(aabb.min.z, aabb.max.z);
+        aabb.max.z = (std::max)(aabb.min.z, aabb.max.z);
+        return aabb;
+        };
+
 
     // ライブラリの初期化
     Novice::Initialize(kWindowTitle, kScreenWidth, kScreenHeight);
@@ -24,6 +36,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     AABB aabb1 = {
         .min{-0.5f, -0.5f, -0.5f},
         .max{0.5f, 0.5f, 0.5f },
+    };
+
+    Sphere sphere = {
+        { 1, 1, 1 },
+        1
     };
 
     Line line = {
@@ -58,7 +75,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&aabb1, &line, &camera);
+        DebugWin(&aabb1, &sphere, &camera);
+        aabb1 = AABBMinMax(aabb1);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -68,13 +86,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(aabb1, line)) {
+        if (IsCollision(aabb1, sphere)) {
             color = RED;
         }
 
         DrawAABB(aabb1, viewProjectionMatrix, viewportMatrix, color);
 
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
+        DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
 
         // フレームの終了
         Novice::EndFrame();

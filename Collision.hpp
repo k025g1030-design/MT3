@@ -218,9 +218,9 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 }
 
 bool IsCollision(const AABB& aabb, const Sphere& sphere) {
-    float closestX = max(aabb.min.x, min(sphere.center.x, aabb.max.x));
-    float closestY = max(aabb.min.y, min(sphere.center.y, aabb.max.y));
-    float closestZ = max(aabb.min.z, min(sphere.center.z, aabb.max.z));
+    float closestX = std::clamp(sphere.center.x, aabb.min.x, aabb.max.x);
+    float closestY = std::clamp(sphere.center.y, aabb.min.y, aabb.max.y);
+    float closestZ = std::clamp(sphere.center.z, aabb.min.z, aabb.max.z);
 
     float distanceX = sphere.center.x - closestX;
     float distanceY = sphere.center.y - closestY;
