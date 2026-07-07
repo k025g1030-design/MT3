@@ -75,6 +75,8 @@ bool IsCollision(const Line& line, const Plane& plane) {
     return false;
 }
 
+
+
 bool IsCollision(const Line& line, const Triangle& triangle) {
     // 1) 法線を計算する
     Vector3 edge1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
@@ -332,4 +334,22 @@ bool IsCollision(const OBB& obb, const Sphere& sphere) {
 
     // 4)距離の平方と半径の平方を比較
     return distanceSquared <= (sphere.radius * sphere.radius);
+}
+
+bool IsCollision(const OBB& obb, const Line& line) {
+    Matrix4x4 obbInverse = MakeRigidInverse(obb.center, obb.orientations[0], obb.orientations[1], obb.orientations[2]);
+    // 2) OBBのローカル座標系に線を変換する
+    Vector3 localOrigin = Transform(line.origin, obbInverse);
+    Vector3 localDiff = Transform(line.diff, obbInverse);
+    // 3) OBBを軸平行な立方体（AABB）として扱い、線とAABBの衝突判定を行う
+    AABB aabb{
+        .min = { -obb.size.x, -obb.size.y, -obb.size.z },
+        .max = { obb.size.x, obb.size.y, obb.size.z }
+    };
+    Line localLine{
+        .origin = localOrigin,
+        .diff = localDiff,
+        .type = line.type
+    };
+    return IsCollision(aabb, localLine);
 }

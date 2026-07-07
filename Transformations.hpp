@@ -121,7 +121,7 @@ Vector3 Transform(const Vector3& point, const Matrix4x4& matrix) {
     result.y = point.x * matrix.m[0][1] + point.y * matrix.m[1][1] + point.z * matrix.m[2][1] + 1.0f * matrix.m[3][1];
     result.z = point.x * matrix.m[0][2] + point.y * matrix.m[1][2] + point.z * matrix.m[2][2] + 1.0f * matrix.m[3][2];
     float w = point.x * matrix.m[0][3] + point.y * matrix.m[1][3] + point.z * matrix.m[2][3] + 1.0f * matrix.m[3][3];
-
+    // w が 0 の場合は透視除法ができないため、結果をそのまま返す
     if (w != 0.0f) {
         result = { result.x / w, result.y / w, result.z / w };
     }

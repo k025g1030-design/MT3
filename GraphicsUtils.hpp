@@ -391,15 +391,15 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
 
 
 
-void DebugWin(Vector3* rotate, OBB* obb, Sphere* sphere, CameraObj* camera) {
+void DebugWin(Vector3* rotate, OBB* obb, Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
     ImGui::DragFloat3("obb.center", &obb->center.x, 0.01f);
     ImGui::DragFloat3("obb.size", &obb->size.x, 0.01f);
     ImGui::DragFloat3("rotate", &rotate->x, 0.01f);
-    ImGui::DragFloat3("sphere.center", &sphere->center.x, 0.01f);
-    ImGui::DragFloat("sphere.radius", &sphere->radius, 0.01f);
+    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
+    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
     ImGui::End();
 }
 
