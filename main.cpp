@@ -21,11 +21,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Vector3 controlPoints[3] = {
-        { -0.8f, 0.58f, 1.0f },
-        { 1.76f, 1.0f, -0.3f },
-        { 0.94f, -0.7f, 2.3f },
-    };
+   
 
 
 

@@ -23,6 +23,20 @@ struct Sphere {
     float radius;
 };
 
+struct LocalTransform {
+    Vector3 translate;
+    Vector3 rotate;
+    Vector3 scale;
+};
+
+struct Node {
+    LocalTransform localTransform;
+    Matrix4x4 parentWorldMatrix;
+
+    int parentIndex = -1;
+    std::vector<int> children;
+};
+
 // 注意事項：数学上、Plane（平面）は無限に広がるものとして扱われます。
 //          そのため、ここでは描画範囲や実体の大きさではなく、単純に数学的な判定だけを行っています。
 struct Plane {
