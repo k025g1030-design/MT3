@@ -75,6 +75,15 @@ Vector3 Normalize(const Vector3& v) {
     return { v.x * invLength, v.y * invLength, v.z * invLength };
 }
 
+/* 線形補間 (Linear Interpolation): */
+Vector3 Lerp(const Vector3& a, const Vector3& b, float t) {
+    return {
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        a.z + (b.z - a.z) * t
+    };
+}
+
 
 
 /********************** ベクトル演算 (Vector Operations) ***************************/

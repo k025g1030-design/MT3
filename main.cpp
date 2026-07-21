@@ -21,41 +21,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Vector3 rotate1{ 0, 0, 0 };
-    Vector3 rotate2{ -0.05f, -2.49f, 0.15f };
-
-    OBB obb1{
-        .center{0, 0, 0},
-        .orientations {
-            {1, 0, 0},
-            {0, 1, 0},
-            {0, 0, 1},
-        },
-        .size{0.83f, 0.26f, 0.24f}
+    Vector3 controlPoints[3] = {
+        { -0.8f, 0.58f, 1.0f },
+        { 1.76f, 1.0f, -0.3f },
+        { 0.94f, -0.7f, 2.3f },
     };
 
-    OBB obb2{
-        .center{0.9f, 0.66f, 0.78f},
-        .orientations {
-            {1, 0, 0},
-            {0, 1, 0},
-            {0, 0, 1},
-        },
-        .size{0.5f, 0.37f, 0.5f}
-    };
-
-    auto RotateOBB = [](OBB& obb, const Vector3& rotation) {
-        Matrix4x4 rotateMatrix = Multiply(MakeRotateXMatrix(rotation.x), Multiply(MakeRotateYMatrix(rotation.y), MakeRotateZMatrix(rotation.z)));
-        obb.orientations[0].x = rotateMatrix.m[0][0];
-        obb.orientations[0].y = rotateMatrix.m[0][1];
-        obb.orientations[0].z = rotateMatrix.m[0][2];
-        obb.orientations[1].x = rotateMatrix.m[1][0];
-        obb.orientations[1].y = rotateMatrix.m[1][1];
-        obb.orientations[1].z = rotateMatrix.m[1][2];
-        obb.orientations[2].x = rotateMatrix.m[2][0];
-        obb.orientations[2].y = rotateMatrix.m[2][1];
-        obb.orientations[2].z = rotateMatrix.m[2][2];
-    };
 
 
     float fovY = Deg2Rad(-45.0f);
@@ -79,14 +50,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
-        // rotate
-        RotateOBB(obb1, rotate1);
-        RotateOBB(obb2, rotate2);
+      
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&rotate1, &obb1, &rotate2, &obb2, &camera);
+        DebugWin(&controlPoints[0], &controlPoints[1], &controlPoints[2], &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -96,12 +65,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(obb1, obb2)) {
-            color = RED;
-        }
+   
 
-        DrawOBB(obb1, viewProjectionMatrix, viewportMatrix, color);
-        DrawOBB(obb2, viewProjectionMatrix, viewportMatrix, color);
+        DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], viewProjectionMatrix, viewportMatrix, color);
         
         // フレームの終了
         Novice::EndFrame();

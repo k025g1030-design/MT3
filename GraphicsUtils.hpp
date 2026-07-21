@@ -389,31 +389,50 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
     }
 }
 
+void DrawPoint(const Vector3& point, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    Vector3 screenPoint = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
+    Novice::DrawEllipse((int)screenPoint.x, (int)screenPoint.y, 2, 2, 0, color, kFillModeSolid);
+}
 
-void DebugWin(Vector3* rotate1, OBB* obb1, Vector3* rotate2, OBB* obb2, CameraObj* camera) {
+void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, const Vector3& controlPoint2, 
+    const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+    const int kSubdivision = 32; // 分割数
+    Vector3 previousPoint = controlPoint0;
+
+    DrawPoint(controlPoint0, viewProjectionMatrix, viewportMatrix, color);
+    DrawPoint(controlPoint1, viewProjectionMatrix, viewportMatrix, color);
+    DrawPoint(controlPoint2, viewProjectionMatrix, viewportMatrix, color);
+
+    for (int i = 1; i <= kSubdivision; ++i) {
+        float t = static_cast<float>(i) / static_cast<float>(kSubdivision);
+        float u = 1.0f - t;
+        // 二次ベジェ曲線の計算
+        Vector3 currentPoint;
+        currentPoint.x = u * u * controlPoint0.x + 2 * u * t * controlPoint1.x + t * t * controlPoint2.x;
+        currentPoint.y = u * u * controlPoint0.y + 2 * u * t * controlPoint1.y + t * t * controlPoint2.y;
+        currentPoint.z = u * u * controlPoint0.z + 2 * u * t * controlPoint1.z + t * t * controlPoint2.z;
+        // 座標変換
+        Vector3 previousScreen = Transform(Transform(previousPoint, viewProjectionMatrix), viewportMatrix);
+        Vector3 currentScreen = Transform(Transform(currentPoint, viewProjectionMatrix), viewportMatrix);
+
+        // 線を描画
+        DrawLine(previousScreen, currentScreen, color);
+        previousPoint = currentPoint;
+    }
+}
+
+void DebugWin(Vector3* controlPoint0, Vector3* controlPoint1, Vector3* controlPoint2, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("obb1.center", &obb1->center.x, 0.01f);
-    ImGui::DragFloat3("obb1.size", &obb1->size.x, 0.01f);
-    ImGui::DragFloat3("obb2.center", &obb2->center.x, 0.01f);
-    ImGui::DragFloat3("obb2.size", &obb2->size.x, 0.01f);
-    ImGui::DragFloat3("rotate1", &rotate1->x, 0.01f);
-    ImGui::DragFloat3("rotate2", &rotate2->x, 0.01f);
+    ImGui::DragFloat3("controlPoint0", &controlPoint0->x, 0.01f);
+    ImGui::DragFloat3("controlPoint1", &controlPoint1->x, 0.01f);
+    ImGui::DragFloat3("controlPoint2", &controlPoint2->x, 0.01f);
     ImGui::End();
 }
 
-void DebugWin(Vector3* rotate, OBB* obb, Line* line, CameraObj* camera) {
-    ImGui::Begin("DEBUG");
-    ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
-    ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("obb.center", &obb->center.x, 0.01f);
-    ImGui::DragFloat3("obb.size", &obb->size.x, 0.01f);
-    ImGui::DragFloat3("rotate", &rotate->x, 0.01f);
-    ImGui::DragFloat3("line.origin", &line->origin.x, 0.01f);
-    ImGui::DragFloat3("line.diff", &line->diff.x, 0.01f);
-    ImGui::End();
-}
+
 
 void TestCorss() {
     Vector3 v1{ 1.2f, -3.9f, 2.5f };
