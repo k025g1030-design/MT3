@@ -5,6 +5,34 @@
 
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 
+void UpdateNode(
+    std::vector<Node>& nodes,
+    int nodeIndex,
+    const Matrix4x4& parentWorldMatrix) {
+
+    Node& node = nodes.at(nodeIndex);
+
+    Matrix4x4 localMatrix = MakeAffineMatrix(
+        node.localTransform->scale,
+        node.localTransform->rotate,
+        node.localTransform->translate
+    );
+
+    node.worldMatrix = Multiply(
+        localMatrix,
+        parentWorldMatrix
+    );
+
+    // 遍歷直接子節點
+    for (int childIndex : node.children) {
+        UpdateNode(
+            nodes,
+            childIndex,
+            node.worldMatrix
+        );
+    }
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     CameraObj camera = {
@@ -21,11 +49,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-   
+    LocalTransform shoulderTransform = {
+        { 0.2f, 1.0f, 0.0f },
+        { 0.0f, 0.0f, -6.8f },
+        { 1.0f, 1.0f, 1.0f }
+    };
+
+    LocalTransform elbowTransform = {
+        { 0.4f, 0.0f, 0.0f },
+        { 0.0f, 0.0f, -1.4f },
+        { 1.0f, 1.0f, 1.0f }
+    };
+
+    LocalTransform handTransform = {
+        { 0.3f, 0.0f, 0.0f },
+        { 0.0f, 0.0f, 0.0f },
+        { 1.0f, 1.0f, 1.0f }
+    };
+
+    std::vector<Node> nodes;
+    nodes.push_back({ &shoulderTransform, {}, -1, { 1 }, RED });
+    nodes.push_back({ &elbowTransform, {}, 0, { 2 }, GREEN });
+    nodes.push_back({ &handTransform, {}, 1, {}, BLUE });
 
 
-
-    float fovY = Deg2Rad(-45.0f);
+    float fovY = Deg2Rad(45.0f);
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
@@ -46,12 +94,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
-      
+       
+        UpdateNode(nodes, 0, MakeIdentity4x4());
+       
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&controlPoints[0], &controlPoints[1], &controlPoints[2], &camera);
+        DebugWin(&shoulderTransform, &elbowTransform, &handTransform, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -63,7 +113,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         uint32_t color = WHITE;
    
 
-        DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], viewProjectionMatrix, viewportMatrix, color);
+        DrawNode(nodes, viewProjectionMatrix, viewportMatrix, color);
         
         // フレームの終了
         Novice::EndFrame();

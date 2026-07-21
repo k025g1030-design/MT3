@@ -30,11 +30,12 @@ struct LocalTransform {
 };
 
 struct Node {
-    LocalTransform localTransform;
-    Matrix4x4 parentWorldMatrix;
+    LocalTransform* localTransform;
+    Matrix4x4 worldMatrix;
 
     int parentIndex = -1;
     std::vector<int> children;
+    uint32_t color = 0xFFFFFFFF; // デフォルトの色を白に設定    
 };
 
 // 注意事項：数学上、Plane（平面）は無限に広がるものとして扱われます。

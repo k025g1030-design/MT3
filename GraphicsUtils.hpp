@@ -394,6 +394,62 @@ void DrawPoint(const Vector3& point, const Matrix4x4& viewProjectionMatrix, cons
     Novice::DrawEllipse((int)screenPoint.x, (int)screenPoint.y, 2, 2, 0, color, kFillModeSolid);
 }
 
+void DrawNode(const std::vector<Node>& nodes, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+    std::vector<Vector3> worldPoints(nodes.size());
+    std::vector<Vector3> screenPoints(nodes.size());
+
+    // 每個節點的世界座標和屏幕座標
+    for (int i = 0; i < nodes.size(); ++i) {
+
+        // 節點的局部原點通過 World Matrix 轉換到世界座標
+        worldPoints[i] = Transform(
+            { 0.0f, 0.0f, 0.0f },
+            nodes[i].worldMatrix
+        );
+
+        // 世界座標 -> NDC
+        Vector3 projected = Transform(
+            worldPoints[i],
+            viewProjectionMatrix
+        );
+
+        // NDC -> 屏幕座標
+        screenPoints[i] = Transform(
+            projected,
+            viewportMatrix
+        );
+    }
+
+    // 根據父子關係畫線
+    for (int i = 0; i < nodes.size(); ++i) {
+        for (int childIndex : nodes[i].children) {
+            if (childIndex >= 0 && childIndex < nodes.size()) {
+                DrawLine(
+                    screenPoints[i],
+                    screenPoints[childIndex],
+                    color
+                );
+            }
+        }
+    }
+
+    // 在每個關節的世界座標上畫球
+    for (int i = 0; i < nodes.size(); ++i) {
+        Sphere sphere = {
+            worldPoints[i],
+            0.1f
+        };
+
+        DrawSphere(
+            sphere,
+            viewProjectionMatrix,
+            viewportMatrix,
+            nodes[i].color
+        );
+    }
+}
+
 void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, const Vector3& controlPoint2, 
     const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
@@ -422,13 +478,22 @@ void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, cons
     }
 }
 
-void DebugWin(Vector3* controlPoint0, Vector3* controlPoint1, Vector3* controlPoint2, CameraObj* camera) {
+void DebugWin(LocalTransform* shoulderTransform, LocalTransform* elbowTransform, LocalTransform* handTransform, CameraObj* camera) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::DragFloat3("controlPoint0", &controlPoint0->x, 0.01f);
-    ImGui::DragFloat3("controlPoint1", &controlPoint1->x, 0.01f);
-    ImGui::DragFloat3("controlPoint2", &controlPoint2->x, 0.01f);
+    ImGui::Separator(); // 横線が引かれます
+    ImGui::DragFloat3("ShoulderTranslate", &shoulderTransform->translate.x, 0.01f);
+    ImGui::DragFloat3("ShoulderRotate", &shoulderTransform->rotate.x, 0.01f);
+    ImGui::DragFloat3("ShoulderScale", &shoulderTransform->scale.x, 0.01f);
+    ImGui::Separator(); // 横線が引かれます
+    ImGui::DragFloat3("ElbowTranslate", &elbowTransform->translate.x, 0.01f);
+    ImGui::DragFloat3("ElbowRotate", &elbowTransform->rotate.x, 0.01f);
+    ImGui::DragFloat3("ElbowScale", &elbowTransform->scale.x, 0.01f);   
+    ImGui::Separator(); // 横線が引かれます
+    ImGui::DragFloat3("HandTranslate", &handTransform->translate.x, 0.01f);
+    ImGui::DragFloat3("HandRotate", &handTransform->rotate.x, 0.01f);
+    ImGui::DragFloat3("HandScale", &handTransform->scale.x, 0.01f);
     ImGui::End();
 }
 
