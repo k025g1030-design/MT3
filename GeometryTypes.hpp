@@ -8,9 +8,61 @@ struct Vector3 {
     float x, y, z;
 };
 
+Vector3 operator+(const Vector3& a, const Vector3& b) {
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+Vector3 operator-(const Vector3& a, const Vector3& b) {
+    return { a.x - b.x, a.y - b.y, a.z - b.z };
+}
+
+Vector3 operator*(float scalar, const Vector3& v) {
+    return { scalar * v.x, scalar * v.y, scalar * v.z };
+}
+
+Vector3 operator*(const Vector3& v, float scalar) {
+    return scalar * v;
+}
+
+Vector3 operator/(const Vector3& v, float scalar) {
+    return (1.0f / scalar) * v;
+}
+
 struct Matrix4x4 {
     float m[4][4];
-};
+}; 
+Matrix4x4 operator+(const Matrix4x4& m1, const Matrix4x4& m2) {
+    Matrix4x4 result{};
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            result.m[i][j] = m1.m[i][j] + m2.m[i][j];
+        }
+    }
+    return result;
+}
+
+Matrix4x4 operator-(const Matrix4x4& m1, const Matrix4x4& m2) {
+    Matrix4x4 result{};
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            result.m[i][j] = m1.m[i][j] - m2.m[i][j];
+        }
+    }
+    return result;
+}
+Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2) {
+    Matrix4x4 result{};
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            result.m[i][j] = 0.0f;
+            for (int k = 0; k < 4; ++k) {
+                result.m[i][j] += m1.m[i][k] * m2.m[k][j];
+            }
+        }
+    }
+    return result;
+}
+
 
 struct CameraObj {
     Vector3 position;

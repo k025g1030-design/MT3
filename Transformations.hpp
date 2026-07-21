@@ -68,10 +68,10 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotation, const 
     Matrix4x4 rotateZ = MakeRotateZMatrix(rotation.z);
     Matrix4x4 translateMatrix = MakeTranslateMatrix(translation);
 
-    Matrix4x4 rotateXYZ = Multiply(rotateX, Multiply(rotateY, rotateZ));
+    Matrix4x4 rotateXYZ = (rotateX * (rotateY * rotateZ));
     //result = Multiply(rotateXYZ, translateMatrix);
     //result = Multiply(scaleMatrix, result);
-    result = Multiply(Multiply(scaleMatrix, rotateXYZ), translateMatrix);
+    result = ((scaleMatrix * rotateXYZ) * translateMatrix);
 
     return result;
 }

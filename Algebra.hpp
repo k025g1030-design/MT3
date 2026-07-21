@@ -6,16 +6,6 @@
  **/
 
 /********************** ベクトル演算 (Vector Operations) ***************************/
-/* 加減算・スカラー倍 (Addition, Subtraction, Scalar Multiplication): */
-Vector3 Add(const Vector3& a, const Vector3& b) {
-    return { a.x + b.x, a.y + b.y, a.z + b.z };
-}
-Vector3 Subtract(const Vector3& a, const Vector3& b) {
-    return { a.x - b.x, a.y - b.y, a.z - b.z };
-}
-Vector3 Multiply(float scalar, const Vector3& v) {
-    return { scalar * v.x, scalar * v.y, scalar * v.z };
-}
 
 /* 内積 (Dot Product): */
 float Dot(const Vector3& a, const Vector3& b) {
@@ -38,7 +28,7 @@ Vector3 Project(const Vector3& v1, const Vector3& v2) {
         return { 0.0f, 0.0f, 0.0f };
     }
     float t = Dot(v1, v2) / lengthSq;
-    return Multiply(t, v2);
+    return (t * v2);
 }
 
 /* ベクトルの長さの2乗を計算する（最適化のため平方根を避ける） */
@@ -97,37 +87,6 @@ Matrix4x4 MakeIdentity4x4() {
 }
 
 /********************** 行列演算(Matrix Operations) ***************************/
-/* 加減算・乗算 (Matrix Arithmetic): */
-Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
-    Matrix4x4 result{};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m1.m[i][j] + m2.m[i][j];
-        }
-    }
-    return result;
-}
-Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
-    Matrix4x4 result{};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m1.m[i][j] - m2.m[i][j];
-        }
-    }
-    return result;
-}
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
-    Matrix4x4 result{};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = 0.0f;
-            for (int k = 0; k < 4; ++k) {
-                result.m[i][j] += m1.m[i][k] * m2.m[k][j];
-            }
-        }
-    }
-    return result;
-}
 
 /* 逆行列 (Inverse Matrix): */
 Matrix4x4 Inverse(const Matrix4x4& mat) {

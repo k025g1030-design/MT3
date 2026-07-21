@@ -5,41 +5,9 @@
 
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 
-void UpdateNode(
-    std::vector<Node>& nodes,
-    int nodeIndex,
-    const Matrix4x4& parentWorldMatrix) {
-
-    Node& node = nodes.at(nodeIndex);
-
-    Matrix4x4 localMatrix = MakeAffineMatrix(
-        node.localTransform->scale,
-        node.localTransform->rotate,
-        node.localTransform->translate
-    );
-
-    node.worldMatrix = Multiply(
-        localMatrix,
-        parentWorldMatrix
-    );
-
-    // 遍歷直接子節點
-    for (int childIndex : node.children) {
-        UpdateNode(
-            nodes,
-            childIndex,
-            node.worldMatrix
-        );
-    }
-}
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-    CameraObj camera = {
-        { 0.0f, 3.5f, -7.0f },
-        { 0.4f, 0.0f, 0.0f },
-        { 1, 1, 1 },
-    };
 
 
     // ライブラリの初期化
@@ -49,71 +17,61 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    LocalTransform shoulderTransform = {
-        { 0.2f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, -6.8f },
-        { 1.0f, 1.0f, 1.0f }
-    };
+   
+    Vector3 a{ 0.2f, 1.0f, 0.0f };
+    Vector3 b{ 2.4f, 3.1f, 1.2f };
 
-    LocalTransform elbowTransform = {
-        { 0.4f, 0.0f, 0.0f },
-        { 0.0f, 0.0f, -1.4f },
-        { 1.0f, 1.0f, 1.0f }
-    };
+    Vector3 c = a + b;
+    Vector3 d = a - b;
+    Vector3 e = a * 2.4f;
 
-    LocalTransform handTransform = {
-        { 0.3f, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f }
-    };
+    Vector3 rotate{ 0.4f, 1.43f, -0.8f };
 
-    std::vector<Node> nodes;
-    nodes.push_back({ &shoulderTransform, {}, -1, { 1 }, RED });
-    nodes.push_back({ &elbowTransform, {}, 0, { 2 }, GREEN });
-    nodes.push_back({ &handTransform, {}, 1, {}, BLUE });
+    Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
+    Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
+    Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
 
-
-    float fovY = Deg2Rad(45.0f);
+    Matrix4x4 rotateMatrix =
+        rotateXMatrix * rotateYMatrix * rotateZMatrix;
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
-        // 1. カメラのワールド行列を計算し、その逆行列から「ビュー変換行列」を生成
-        // (世界空間の座標を、カメラから見た座標空間へ変換する)
-        Matrix4x4 cameraMatrix = MakeAffineMatrix(camera.scale, camera.rotation, camera.position);
-        Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 
-        // 2. アスペクト比を計算し、透視投影（ペルスペクティブ）による「プロジェクション変換行列」を生成
-        // (遠くのものを小さく、近くのものを大きく表現し、3D空間をクリッピング空間へ変換する)
-        float aspect = (float)kScreenWidth / (float)kScreenHeight; 
-        Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(fovY, aspect, 0.1f, 100.0f);
-
-        // 3. ビュー行列とプロジェクション行列を合成 (View-Projection 行列)
-        // (カメラの視点と画面への投影計算を一本化する)
-        Matrix4x4 viewProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
-
-        // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
-        Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
-
-       
-        UpdateNode(nodes, 0, MakeIdentity4x4());
        
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&shoulderTransform, &elbowTransform, &handTransform, &camera);
+       
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        DrawGridV2(viewProjectionMatrix, viewportMatrix);
+        ImGui::Begin("Window");
+
+        ImGui::Text("c:%f, %f, %f", c.x, c.y, c.z);
+        ImGui::Text("d:%f, %f, %f", d.x, d.y, d.z);
+        ImGui::Text("e:%f, %f, %f", e.x, e.y, e.z);
+
+        ImGui::Text(
+            "matrix:\n"
+            "%f, %f, %f, %f\n"
+            "%f, %f, %f, %f\n"
+            "%f, %f, %f, %f\n"
+            "%f, %f, %f, %f\n",
+            rotateMatrix.m[0][0], rotateMatrix.m[0][1],
+            rotateMatrix.m[0][2], rotateMatrix.m[0][3],
+            rotateMatrix.m[1][0], rotateMatrix.m[1][1],
+            rotateMatrix.m[1][2], rotateMatrix.m[1][3],
+            rotateMatrix.m[2][0], rotateMatrix.m[2][1],
+            rotateMatrix.m[2][2], rotateMatrix.m[2][3],
+            rotateMatrix.m[3][0], rotateMatrix.m[3][1],
+            rotateMatrix.m[3][2], rotateMatrix.m[3][3]
+        );
+
+        ImGui::End();
         
-
-        uint32_t color = WHITE;
-   
-
-        DrawNode(nodes, viewProjectionMatrix, viewportMatrix, color);
         
         // フレームの終了
         Novice::EndFrame();

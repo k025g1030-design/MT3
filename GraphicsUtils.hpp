@@ -225,7 +225,7 @@ void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatri
 
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
     // Zの役割 1 & 2: 空間基準と直交基底の構築
-    Vector3 center = Multiply(plane.distance, plane.normal);
+    Vector3 center = (plane.distance * plane.normal);
     Vector3 right = Normalize(Perpendicular(plane.normal));
     Vector3 up = Cross(plane.normal, right);
     float size = 2.0f; // 平面を描画する際のスケール
@@ -241,8 +241,8 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
     Vector3 points[4];
     for (uint32_t i = 0; i < 4; ++i) {
         // 頂点の生成: 基準点に対して、rightとupを配列の符号に従って加算
-        Vector3 offset = Add(Multiply(size * signs[i][0], right), Multiply(size * signs[i][1], up));
-        Vector3 point = Add(center, offset);
+        Vector3 offset = (((size * signs[i][0]) * right) + ((size * signs[i][1]) * up));
+        Vector3 point = (center + offset);
 
         // Zの役割: 透視投影のトリガー】
         // point.z を透視除法の係数として消費し、スクリーン座標へ変換

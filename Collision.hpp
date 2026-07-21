@@ -7,7 +7,7 @@
  */
 
 Vector3 ClosestPoint(const Vector3& point, const Line& segment) {
-    Vector3 v = Subtract(point, segment.origin);
+    Vector3 v = point - segment.origin;
 
     float lengthSq = Dot(segment.diff, segment.diff);
     float t = 0.0f;
@@ -18,11 +18,11 @@ Vector3 ClosestPoint(const Vector3& point, const Line& segment) {
 
     t = Clamp(t, 0.0f, 1.0f);
 
-    return Add(segment.origin, Multiply(t, segment.diff));
+    return (segment.origin + (t * segment.diff));
 }
 
 bool IsCollision(const Sphere& s1, const Sphere& s2) {
-    float distanceSq = LengthSq(Subtract(s1.center, s2.center));
+    float distanceSq = LengthSq((s1.center - s2.center));
 
     float radiusSum = s1.radius + s2.radius;
     float radiusSumSq = radiusSum * radiusSum;
@@ -79,8 +79,8 @@ bool IsCollision(const Line& line, const Plane& plane) {
 
 bool IsCollision(const Line& line, const Triangle& triangle) {
     // 1) 法線を計算する
-    Vector3 edge1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
-    Vector3 edge2 = Subtract(triangle.vertices[2], triangle.vertices[0]);
+    Vector3 edge1 = (triangle.vertices[1] - triangle.vertices[0]);
+    Vector3 edge2 = (triangle.vertices[2] - triangle.vertices[0]);
     Vector3 normalize = Normalize(Cross(edge1, edge2));
 
     // 2) 線と「三角形が乗っている無限平面」の交点を求める
@@ -143,8 +143,8 @@ bool IsCollision(const Line& line, const PolygonV2& polygon) {
     }
 
     // 1) 法線を計算する（何角形であっても、最初の3頂点から平面の法線を決定できる）
-    Vector3 edge1 = Subtract(polygon.vertices[1], polygon.vertices[0]);
-    Vector3 edge2 = Subtract(polygon.vertices[2], polygon.vertices[0]);
+    Vector3 edge1 = polygon.vertices[1] - polygon.vertices[0];
+    Vector3 edge2 = polygon.vertices[2] - polygon.vertices[0];
     Vector3 normalize = Normalize(Cross(edge1, edge2));
 
     // 2) 線と「多角形が乗っている無限平面」の交点（パラメータ t）を求める
