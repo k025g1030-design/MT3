@@ -390,6 +390,18 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
 }
 
 
+void DebugWin(Vector3* rotate1, OBB* obb1, Vector3* rotate2, OBB* obb2, CameraObj* camera) {
+    ImGui::Begin("DEBUG");
+    ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
+    ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
+    ImGui::DragFloat3("obb1.center", &obb1->center.x, 0.01f);
+    ImGui::DragFloat3("obb1.size", &obb1->size.x, 0.01f);
+    ImGui::DragFloat3("obb2.center", &obb2->center.x, 0.01f);
+    ImGui::DragFloat3("obb2.size", &obb2->size.x, 0.01f);
+    ImGui::DragFloat3("rotate1", &rotate1->x, 0.01f);
+    ImGui::DragFloat3("rotate2", &rotate2->x, 0.01f);
+    ImGui::End();
+}
 
 void DebugWin(Vector3* rotate, OBB* obb, Line* line, CameraObj* camera) {
     ImGui::Begin("DEBUG");

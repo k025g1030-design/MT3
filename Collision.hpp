@@ -353,3 +353,34 @@ bool IsCollision(const OBB& obb, const Line& line) {
     };
     return IsCollision(aabb, localLine);
 }
+
+bool IsCollision(const OBB& obb, const OBB& other) {
+    // 1) OBBの中心間のベクトルを計算
+    Vector3 dir = {
+        other.center.x - obb.center.x,
+        other.center.y - obb.center.y,
+        other.center.z - obb.center.z
+    };
+    // 2) OBBのローカル軸を使って、他のOBBの中心を射影し、境界内にクランプする
+    Vector3 closestPoint = obb.center;
+    float extents[3] = { obb.size.x, obb.size.y, obb.size.z };
+    for (int i = 0; i < 3; ++i) {
+        float dist = Dot(dir, obb.orientations[i]);
+        dist = max(-extents[i], min(dist, extents[i]));
+        closestPoint.x += dist * obb.orientations[i].x;
+        closestPoint.y += dist * obb.orientations[i].y;
+        closestPoint.z += dist * obb.orientations[i].z;
+    }
+    // 3) 算出された最近点と他のOBBの中心との距離の平方を計算
+    Vector3 v = {
+        other.center.x - closestPoint.x,
+        other.center.y - closestPoint.y,
+        other.center.z - closestPoint.z
+    };
+    float distanceSquared = Dot(v, v);
+    // 4) 距離の平方と他のOBBの半径（サイズ）の平方を比較
+    float radiusSumSquared = (other.size.x * other.size.x) +
+        (other.size.y * other.size.y) +
+        (other.size.z * other.size.z);
+    return distanceSquared <= radiusSumSquared;
+}

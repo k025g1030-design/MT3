@@ -21,22 +21,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Vector3 rotate{ 0, 0, 0 };
+    Vector3 rotate1{ 0, 0, 0 };
+    Vector3 rotate2{ -0.05f, -2.49f, 0.15f };
 
-    OBB obb{
-        .center{-1.0f, 0, 0},
+    OBB obb1{
+        .center{0, 0, 0},
         .orientations {
             {1, 0, 0},
             {0, 1, 0},
             {0, 0, 1},
         },
-        .size{0.5f, 0.5f, 0.5f}
+        .size{0.83f, 0.26f, 0.24f}
     };
 
-    Line line{
-        .origin{ -0.8f, -0.3f, 0.0f },
-        .diff{ 0.5f, 0.5f, 0.5f },
-        .type{ LineType::Segment }
+    OBB obb2{
+        .center{0.9f, 0.66f, 0.78f},
+        .orientations {
+            {1, 0, 0},
+            {0, 1, 0},
+            {0, 0, 1},
+        },
+        .size{0.5f, 0.37f, 0.5f}
+    };
+
+    auto RotateOBB = [](OBB& obb, const Vector3& rotation) {
+        Matrix4x4 rotateMatrix = Multiply(MakeRotateXMatrix(rotation.x), Multiply(MakeRotateYMatrix(rotation.y), MakeRotateZMatrix(rotation.z)));
+        obb.orientations[0].x = rotateMatrix.m[0][0];
+        obb.orientations[0].y = rotateMatrix.m[0][1];
+        obb.orientations[0].z = rotateMatrix.m[0][2];
+        obb.orientations[1].x = rotateMatrix.m[1][0];
+        obb.orientations[1].y = rotateMatrix.m[1][1];
+        obb.orientations[1].z = rotateMatrix.m[1][2];
+        obb.orientations[2].x = rotateMatrix.m[2][0];
+        obb.orientations[2].y = rotateMatrix.m[2][1];
+        obb.orientations[2].z = rotateMatrix.m[2][2];
     };
 
 
@@ -62,23 +80,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
         // rotate
-        Matrix4x4 rotateMatrix = Multiply(MakeRotateXMatrix(rotate.x), Multiply(MakeRotateYMatrix(rotate.y), MakeRotateZMatrix(rotate.z)));
-        obb.orientations[0].x = rotateMatrix.m[0][0];
-        obb.orientations[0].y = rotateMatrix.m[0][1];
-        obb.orientations[0].z = rotateMatrix.m[0][2];
-
-        obb.orientations[1].x = rotateMatrix.m[1][0];
-        obb.orientations[1].y = rotateMatrix.m[1][1];
-        obb.orientations[1].z = rotateMatrix.m[1][2];
-
-        obb.orientations[2].x = rotateMatrix.m[2][0];
-        obb.orientations[2].y = rotateMatrix.m[2][1];
-        obb.orientations[2].z = rotateMatrix.m[2][2];
+        RotateOBB(obb1, rotate1);
+        RotateOBB(obb2, rotate2);
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&rotate, &obb, &line, &camera);
+        DebugWin(&rotate1, &obb1, &rotate2, &obb2, &camera);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
@@ -88,12 +96,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         
 
         uint32_t color = WHITE;
-        if (IsCollision(obb, line)) {
+        if (IsCollision(obb1, obb2)) {
             color = RED;
         }
 
-        DrawOBB(obb, viewProjectionMatrix, viewportMatrix, color);
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, color);
+        DrawOBB(obb1, viewProjectionMatrix, viewportMatrix, color);
+        DrawOBB(obb2, viewProjectionMatrix, viewportMatrix, color);
         
         // フレームの終了
         Novice::EndFrame();
