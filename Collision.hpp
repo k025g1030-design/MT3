@@ -354,33 +354,89 @@ bool IsCollision(const OBB& obb, const Line& line) {
     return IsCollision(aabb, localLine);
 }
 
-bool IsCollision(const OBB& obb, const OBB& other) {
-    // 1) OBBの中心間のベクトルを計算
-    Vector3 dir = {
+bool IsOverlapOnAxis(const OBB& obb, const OBB& other, Vector3 axis) {
+    constexpr float AXIS_EPSILON = 0.000001f;
+    constexpr float COLLISION_EPSILON = 0.00001f;
+
+    // 外積した軸がほぼゼロの場合、二つの軸は平行。
+    // この軸は分離軸として利用できないので無視する。
+    float axisLengthSquared = Dot(axis, axis);
+
+    if (axisLengthSquared < AXIS_EPSILON) {
+        return true;
+    }
+
+    axis = Normalize(axis);
+
+    // OBB中心間のベクトル
+    Vector3 centerDirection = {
         other.center.x - obb.center.x,
         other.center.y - obb.center.y,
         other.center.z - obb.center.z
     };
-    // 2) OBBのローカル軸を使って、他のOBBの中心を射影し、境界内にクランプする
-    Vector3 closestPoint = obb.center;
-    float extents[3] = { obb.size.x, obb.size.y, obb.size.z };
+
+    // 分離軸上に投影した中心間距離
+    float centerDistance =
+        std::fabs(Dot(centerDirection, axis));
+
+    // obbをaxis上に投影したときの半径
+    float radiusA =
+        obb.size.x *
+        std::fabs(Dot(obb.orientations[0], axis)) +
+        obb.size.y *
+        std::fabs(Dot(obb.orientations[1], axis)) +
+        obb.size.z *
+        std::fabs(Dot(obb.orientations[2], axis));
+
+    // otherをaxis上に投影したときの半径
+    float radiusB =
+        other.size.x *
+        std::fabs(Dot(other.orientations[0], axis)) +
+        other.size.y *
+        std::fabs(Dot(other.orientations[1], axis)) +
+        other.size.z *
+        std::fabs(Dot(other.orientations[2], axis));
+
+    // 中心間距離が投影半径の合計より大きければ分離している
+    return centerDistance <= radiusA + radiusB + COLLISION_EPSILON;
+}
+
+
+bool IsCollision(const OBB& obb, const OBB& other) {
+    // 1. obb自身の3軸を調べる
     for (int i = 0; i < 3; ++i) {
-        float dist = Dot(dir, obb.orientations[i]);
-        dist = max(-extents[i], min(dist, extents[i]));
-        closestPoint.x += dist * obb.orientations[i].x;
-        closestPoint.y += dist * obb.orientations[i].y;
-        closestPoint.z += dist * obb.orientations[i].z;
+        if (!IsOverlapOnAxis(
+            obb,
+            other,
+            obb.orientations[i])) {
+            return false;
+        }
     }
-    // 3) 算出された最近点と他のOBBの中心との距離の平方を計算
-    Vector3 v = {
-        other.center.x - closestPoint.x,
-        other.center.y - closestPoint.y,
-        other.center.z - closestPoint.z
-    };
-    float distanceSquared = Dot(v, v);
-    // 4) 距離の平方と他のOBBの半径（サイズ）の平方を比較
-    float radiusSumSquared = (other.size.x * other.size.x) +
-        (other.size.y * other.size.y) +
-        (other.size.z * other.size.z);
-    return distanceSquared <= radiusSumSquared;
+
+    // 2. other自身の3軸を調べる
+    for (int i = 0; i < 3; ++i) {
+        if (!IsOverlapOnAxis(
+            obb,
+            other,
+            other.orientations[i])) {
+            return false;
+        }
+    }
+
+    // 3. 両方のローカル軸の外積から得られる9軸を調べる
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            Vector3 axis = Cross(
+                obb.orientations[i],
+                other.orientations[j]
+            );
+
+            if (!IsOverlapOnAxis(obb, other, axis)) {
+                return false;
+            }
+        }
+    }
+
+    // 15軸すべてで投影が重なっている
+    return true;
 }
