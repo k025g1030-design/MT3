@@ -23,28 +23,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    float angularVelocity = 3.14f;
-    float angle = 0.0f;
-    float radius = 2.0f;
+    Pendulum pendulum;
+    pendulum.anchor = { 0.0f, 1.0f, 0.0f };
+    pendulum.length = 0.8f;
+    pendulum.angle = 0.7f;
+    pendulum.angularVelocity = 0.0f;
+    pendulum.angularAcceleration = 0.0f;
 
+    Line line;
 
-    Ball ball{};
-    ball.position = { 1.2f, 0.0f, 0.0f };
-    ball.mass = 2.0f;
-    ball.radius = 0.05f;
-    ball.color = BLUE; // 
-
-    float deltaTime = 1.0f / 60.0f; // 60FPS
-
-    Ball ball_c{};
-    ball_c.position = { 0.0f, 0.0f, 0.0f };
-    ball_c.mass = 1.0f;
-    ball_c.radius = 0.1f;
-    ball_c.color = RED; // 赤
-
+    Ball ball;
+    ball.position = { 0.0f, 0.0f, 0.0f };
+    ball.radius = 0.1f;
+    ball.color = RED;
 
     float fovY = Deg2Rad(45.0f);
     bool start = false;
+
+    float deltaTime = 1.0f / 60.0f; // 60FPSを想定したデルタタイム
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
@@ -67,13 +63,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
 
-        angle += angularVelocity * deltaTime;
+       
 
         if (start) {
-            ball.position.x = ball_c.position.x + cos(angle) * radius;
-            ball.position.y = ball_c.position.y + sin(angle) * radius;
-            ball.position.z = ball_c.position.z;
+            pendulum.angularAcceleration = (-9.8f / pendulum.length) * std::sin(pendulum.angle);
+            pendulum.angularVelocity += pendulum.angularAcceleration * deltaTime; 
+            pendulum.angle += pendulum.angularVelocity * deltaTime;
+
+            // 減衰を追加
+            ball.position.x = pendulum.anchor.x + pendulum.length * std::sin(pendulum.angle);
+            ball.position.y = pendulum.anchor.y - pendulum.length * std::cos(pendulum.angle);
+            ball.position.z = pendulum.anchor.z;
+
         }
+
+        line.diff = ball.position;
+        line.origin = pendulum.anchor;
 
         // フレームの開始
         Novice::BeginFrame();
@@ -87,9 +92,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
+        DrawLine(line, viewProjectionMatrix, viewportMatrix, GREEN);
+
 
         DrawBall(ball.position, ball.radius, viewProjectionMatrix, viewportMatrix, ball.color);
-        DrawBall(ball_c.position, ball_c.radius, viewProjectionMatrix, viewportMatrix, ball_c.color);
 
 
         // フレームの終了

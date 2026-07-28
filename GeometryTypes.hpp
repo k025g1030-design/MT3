@@ -147,3 +147,11 @@ struct Ball {
     float radius; // 半径
     uint32_t color; // 色
 };
+
+struct Pendulum {
+    Vector3 anchor; // 振り子の固定点
+    float length;   // 振り子の長さ
+    float angle;    // 振り子の角度（ラジアン）
+    float angularVelocity;     // 角速度
+    float angularAcceleration; // 角加速度
+};
