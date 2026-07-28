@@ -6,6 +6,8 @@
 const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 
 
+
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -23,24 +25,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    ConicalPendulum pendulum;
-    pendulum.anchor = { 0.0f, 1.0f, 0.0f };
-    pendulum.length = 0.8f;
-    pendulum.halfApexAngle = 0.7f;
-    pendulum.angle = 0.0f;
-    pendulum.angularVelocity = 0.0f;
-
-    Line line;
+    Plane plane;
+    plane.normal = Normalize({ -0.2f, 0.9f, -0.3f});
+    plane.distance = 0.0f;
 
     Ball ball;
-    ball.position = { 0.0f, 0.0f, 0.0f };
-    ball.radius = 0.1f;
-    ball.color = RED;
+    ball.position = { 0.8f, 1.2f, 0.3f };
+    ball.mass = 2.0f;
+    ball.radius = 0.05f;
+    ball.color = WHITE;
+    ball.velocity = { 0.0f, 0.0f, 0.0f };
+
+    ball.acceleration = { 0.0f, -9.8f, 0.0f }; // 重力加速度を設定
 
     float fovY = Deg2Rad(45.0f);
     bool start = false;
 
     float deltaTime = 1.0f / 60.0f; // 60FPSを想定したデルタタイム
+    float e = 0.8f; // 反発係数
+
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
@@ -66,19 +69,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
        
 
         if (start) {
-            pendulum.angularVelocity = std::sqrtf(9.8f / (pendulum.length * std::cosf(pendulum.halfApexAngle)));
-            pendulum.angle += pendulum.angularVelocity * deltaTime;
+            // 加速度を速度に加算する
+            ball.velocity = ball.velocity + ball.acceleration * deltaTime;
 
-            float radius = pendulum.length * std::sinf(pendulum.halfApexAngle);
-            float height = pendulum.length * std::cosf(pendulum.halfApexAngle);
-            ball.position.x = pendulum.anchor.x + radius * std::cosf(pendulum.angle);
-            ball.position.y = pendulum.anchor.y - height;
-            ball.position.z = pendulum.anchor.z + radius * std::sinf(pendulum.angle);
+            // 速度を位置に加算する
+            ball.position = ball.position + ball.velocity * deltaTime;
 
+            // ボールの中心から平面までの符号付き距離を計算する
+            float signedDistance = Dot(ball.position, plane.normal) - plane.distance;
+
+            // ボールが平面に接触、または平面にめり込んでいる場合
+            if (signedDistance <= ball.radius) {
+                // めり込み量を計算する
+                float penetration = ball.radius - signedDistance;
+
+                // ボールを平面の法線方向へ移動させ、めり込みを解消する
+                ball.position = ball.position + plane.normal * penetration;
+
+                // 速度の平面法線方向成分を計算する
+                float normalVelocity = Dot(ball.velocity, plane.normal);
+
+                // ボールが平面に向かって移動している場合のみ反射処理を行う
+                if (normalVelocity < 0.0f) {
+                    // 速度を平面の法線方向へ射影する
+                    Vector3 normalComponent = plane.normal * normalVelocity;
+
+                    // 速度の平面に沿った接線方向成分を求める
+                    Vector3 tangentComponent = ball.velocity - normalComponent;
+
+                    // 法線方向の速度を反転し、反発係数を適用する
+                    // 接線方向の速度はそのまま維持する
+                    ball.velocity = tangentComponent - normalComponent * e;
+                }
+            }
         }
 
-        line.diff = ball.position;
-        line.origin = pendulum.anchor;
+
 
         // フレームの開始
         Novice::BeginFrame();
@@ -92,8 +118,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, GREEN);
-
+        DrawPlane(plane, viewProjectionMatrix, viewportMatrix, GREEN);
 
         DrawBall(ball.position, ball.radius, viewProjectionMatrix, viewportMatrix, ball.color);
 

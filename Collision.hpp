@@ -440,3 +440,9 @@ bool IsCollision(const OBB& obb, const OBB& other) {
     // 15軸すべてで投影が重なっている
     return true;
 }
+
+Vector3 Reflect(const Vector3& incident, const Vector3& normal) {
+    // 反射ベクトルの計算: R = I - 2 * (I・N) * N
+    float dotProduct = Dot(incident, normal);
+    return incident - 2.0f * dotProduct * normal;
+}
