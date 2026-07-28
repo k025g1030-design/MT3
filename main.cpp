@@ -23,23 +23,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Spring spring{};
-    spring.anchor = { 0.0f, 0.0f, 0.0f };
-    spring.naturalLength = 1.0f;
-    spring.stiffness = 100.0f;
-    spring.dampingCoefficient = 2.0f;
+    float angularVelocity = 3.14f;
+    float angle = 0.0f;
+    float radius = 2.0f;
+
 
     Ball ball{};
     ball.position = { 1.2f, 0.0f, 0.0f };
     ball.mass = 2.0f;
     ball.radius = 0.05f;
-    ball.color = BLUE; // 赤
+    ball.color = BLUE; // 
 
     float deltaTime = 1.0f / 60.0f; // 60FPS
 
-    Line line{};
+    Ball ball_c{};
+    ball_c.position = { 0.0f, 0.0f, 0.0f };
+    ball_c.mass = 1.0f;
+    ball_c.radius = 0.1f;
+    ball_c.color = RED; // 赤
+
 
     float fovY = Deg2Rad(45.0f);
+    bool start = false;
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
@@ -62,29 +67,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
 
 
-        Vector3 diff = ball.position - spring.anchor;
-        float length = Length(diff);
-        if (length != 0.0f) {
-            Vector3 direction = Normalize(diff); // 正規化
-            Vector3 restPosition = spring.anchor + direction * spring.naturalLength;
-            Vector3 displacement = length * (ball.position - restPosition);
-            Vector3 restoringForce = -spring.stiffness * displacement;
-            Vector3 dampingForce = -spring.dampingCoefficient * ball.velocity;
-            Vector3 force = restoringForce + dampingForce;
-            ball.acceleration = force / ball.mass;
+        angle += angularVelocity * deltaTime;
+
+        if (start) {
+            ball.position.x = ball_c.position.x + cos(angle) * radius;
+            ball.position.y = ball_c.position.y + sin(angle) * radius;
+            ball.position.z = ball_c.position.z;
         }
-
-        ball.velocity = ball.velocity + ball.acceleration * deltaTime;
-        ball.position = ball.position + ball.velocity * deltaTime;
-
-        line.origin = spring.anchor;
-        line.diff = ball.position - spring.anchor;
-       
 
         // フレームの開始
         Novice::BeginFrame();
 
-        DebugWin(&camera, &spring);
+        DebugWin(&camera, start);
+
 
         DrawGridV2(viewProjectionMatrix, viewportMatrix);
 
@@ -92,12 +87,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        DrawLine(line, viewProjectionMatrix, viewportMatrix, RED);
 
         DrawBall(ball.position, ball.radius, viewProjectionMatrix, viewportMatrix, ball.color);
-       
-        
-        
+        DrawBall(ball_c.position, ball_c.radius, viewProjectionMatrix, viewportMatrix, ball_c.color);
+
+
         // フレームの終了
         Novice::EndFrame();
 

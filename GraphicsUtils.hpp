@@ -478,18 +478,18 @@ void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, cons
     }
 }
 
-void DebugWin(CameraObj* camera, Spring* spring) {
+
+
+void DebugWin(CameraObj* camera, bool& run) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
     ImGui::Separator();
-    ImGui::DragFloat("SpringNaturalLength", &spring->naturalLength, 0.01f);
-    ImGui::DragFloat("SpringStiffness", &spring->stiffness, 0.01f);
-    ImGui::DragFloat("SpringDamping", &spring->dampingCoefficient, 0.01f);
-
+    if (ImGui::Button("Start/Stop")) {
+        run = !run;
+    }
     ImGui::End();
 }
-
 
 
 void TestCorss() {
