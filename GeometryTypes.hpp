@@ -155,3 +155,11 @@ struct Pendulum {
     float angularVelocity;     // 角速度
     float angularAcceleration; // 角加速度
 };
+
+struct ConicalPendulum {
+    Vector3 anchor; // 振り子の固定点
+    float length;   // 振り子の長さ
+    float halfApexAngle;  // 振り子の円錐角度の半分（ラジアン）
+    float angle;    // 振り子の角度（ラジアン）
+    float angularVelocity;     // 角速度
+};

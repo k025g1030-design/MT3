@@ -23,12 +23,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-    Pendulum pendulum;
+    ConicalPendulum pendulum;
     pendulum.anchor = { 0.0f, 1.0f, 0.0f };
     pendulum.length = 0.8f;
-    pendulum.angle = 0.7f;
+    pendulum.halfApexAngle = 0.7f;
+    pendulum.angle = 0.0f;
     pendulum.angularVelocity = 0.0f;
-    pendulum.angularAcceleration = 0.0f;
 
     Line line;
 
@@ -66,14 +66,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
        
 
         if (start) {
-            pendulum.angularAcceleration = (-9.8f / pendulum.length) * std::sin(pendulum.angle);
-            pendulum.angularVelocity += pendulum.angularAcceleration * deltaTime; 
+            pendulum.angularVelocity = std::sqrtf(9.8f / (pendulum.length * std::cosf(pendulum.halfApexAngle)));
             pendulum.angle += pendulum.angularVelocity * deltaTime;
 
-            // 減衰を追加
-            ball.position.x = pendulum.anchor.x + pendulum.length * std::sin(pendulum.angle);
-            ball.position.y = pendulum.anchor.y - pendulum.length * std::cos(pendulum.angle);
-            ball.position.z = pendulum.anchor.z;
+            float radius = pendulum.length * std::sinf(pendulum.halfApexAngle);
+            float height = pendulum.length * std::cosf(pendulum.halfApexAngle);
+            ball.position.x = pendulum.anchor.x + radius * std::cosf(pendulum.angle);
+            ball.position.y = pendulum.anchor.y - height;
+            ball.position.z = pendulum.anchor.z + radius * std::sinf(pendulum.angle);
 
         }
 
