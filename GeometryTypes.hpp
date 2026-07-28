@@ -131,3 +131,19 @@ struct OBB {
     Vector3 orientations[3];   // 座標軸
     Vector3 size;              // 座標軸方向の長さの半分。中心から面までの距離
 };
+
+struct Spring {
+    Vector3 anchor; // 固定点
+    float naturalLength; // 自然長
+    float stiffness; // ばね定数
+    float dampingCoefficient; // 減衰係数
+};
+
+struct Ball {
+    Vector3 position; // 位置
+    Vector3 velocity; // 速度
+    Vector3 acceleration; // 加速度
+    float mass; // 質量
+    float radius; // 半径
+    uint32_t color; // 色
+};

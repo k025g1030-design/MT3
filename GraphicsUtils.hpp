@@ -478,22 +478,15 @@ void DrawBezier(const Vector3& controlPoint0, const Vector3& controlPoint1, cons
     }
 }
 
-void DebugWin(LocalTransform* shoulderTransform, LocalTransform* elbowTransform, LocalTransform* handTransform, CameraObj* camera) {
+void DebugWin(CameraObj* camera, Spring* spring) {
     ImGui::Begin("DEBUG");
     ImGui::DragFloat3("CameraTranslate", &camera->position.x, 0.01f);
     ImGui::DragFloat3("CameraRotate", &camera->rotation.x, 0.01f);
-    ImGui::Separator(); // 横線が引かれます
-    ImGui::DragFloat3("ShoulderTranslate", &shoulderTransform->translate.x, 0.01f);
-    ImGui::DragFloat3("ShoulderRotate", &shoulderTransform->rotate.x, 0.01f);
-    ImGui::DragFloat3("ShoulderScale", &shoulderTransform->scale.x, 0.01f);
-    ImGui::Separator(); // 横線が引かれます
-    ImGui::DragFloat3("ElbowTranslate", &elbowTransform->translate.x, 0.01f);
-    ImGui::DragFloat3("ElbowRotate", &elbowTransform->rotate.x, 0.01f);
-    ImGui::DragFloat3("ElbowScale", &elbowTransform->scale.x, 0.01f);   
-    ImGui::Separator(); // 横線が引かれます
-    ImGui::DragFloat3("HandTranslate", &handTransform->translate.x, 0.01f);
-    ImGui::DragFloat3("HandRotate", &handTransform->rotate.x, 0.01f);
-    ImGui::DragFloat3("HandScale", &handTransform->scale.x, 0.01f);
+    ImGui::Separator();
+    ImGui::DragFloat("SpringNaturalLength", &spring->naturalLength, 0.01f);
+    ImGui::DragFloat("SpringStiffness", &spring->stiffness, 0.01f);
+    ImGui::DragFloat("SpringDamping", &spring->dampingCoefficient, 0.01f);
+
     ImGui::End();
 }
 
@@ -504,4 +497,10 @@ void TestCorss() {
     Vector3 v2{ 2.8f, 0.4f, -1.3f };
     VectorScreenPrintf(0, 0, Cross(v1, v2), "Cross");
 
+}
+
+
+void DrawBall(const Vector3& center, float radius, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+    Sphere sphere = { center, radius };
+    DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
 }

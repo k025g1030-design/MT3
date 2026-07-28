@@ -9,6 +9,12 @@ const char kWindowTitle[] = "GC2B_08_ラ_ケツブン";
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
+    CameraObj camera = {
+        { 0.0f, 3.5f, -7.0f },
+        { 0.4f, 0.0f, 0.0f },
+        { 1, 1, 1 },
+    };
+
 
     // ライブラリの初期化
     Novice::Initialize(kWindowTitle, kScreenWidth, kScreenHeight);
@@ -17,60 +23,79 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     char keys[256] = {0};
     char preKeys[256] = {0};
 
-   
-    Vector3 a{ 0.2f, 1.0f, 0.0f };
-    Vector3 b{ 2.4f, 3.1f, 1.2f };
+    Spring spring{};
+    spring.anchor = { 0.0f, 0.0f, 0.0f };
+    spring.naturalLength = 1.0f;
+    spring.stiffness = 100.0f;
+    spring.dampingCoefficient = 2.0f;
 
-    Vector3 c = a + b;
-    Vector3 d = a - b;
-    Vector3 e = a * 2.4f;
+    Ball ball{};
+    ball.position = { 1.2f, 0.0f, 0.0f };
+    ball.mass = 2.0f;
+    ball.radius = 0.05f;
+    ball.color = BLUE; // 赤
 
-    Vector3 rotate{ 0.4f, 1.43f, -0.8f };
+    float deltaTime = 1.0f / 60.0f; // 60FPS
 
-    Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
-    Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
-    Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
+    Line line{};
 
-    Matrix4x4 rotateMatrix =
-        rotateXMatrix * rotateYMatrix * rotateZMatrix;
+    float fovY = Deg2Rad(45.0f);
 
     // ウィンドウの×ボタンが押されるまでループ
     while (Novice::ProcessMessage() == 0) {
 
+        // 1. カメラのワールド行列を計算し、その逆行列から「ビュー変換行列」を生成
+        // (世界空間の座標を、カメラから見た座標空間へ変換する)
+        Matrix4x4 cameraMatrix = MakeAffineMatrix(camera.scale, camera.rotation, camera.position);
+        Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+
+        // 2. アスペクト比を計算し、透視投影（ペルスペクティブ）による「プロジェクション変換行列」を生成
+        // (遠くのものを小さく、近くのものを大きく表現し、3D空間をクリッピング空間へ変換する)
+        float aspect = (float)kScreenWidth / (float)kScreenHeight;
+        Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(fovY, aspect, 0.1f, 100.0f);
+
+        // 3. ビュー行列とプロジェクション行列を合成 (View-Projection 行列)
+        // (カメラの視点と画面への投影計算を一本化する)
+        Matrix4x4 viewProjectionMatrix = (viewMatrix * projectionMatrix);
+
+        // 4. 正規化デバイス座標(NDC)から、実際の画面ピクセル解像度(1280x720)へマッピングする「ビューポート変換行列」を生成
+        Matrix4x4 viewportMatrix = MakeViewportMatrix(0.0f, 0.0f, (float)kScreenWidth, (float)kScreenHeight, 0.0f, 1.0f);
+
+
+        Vector3 diff = ball.position - spring.anchor;
+        float length = Length(diff);
+        if (length != 0.0f) {
+            Vector3 direction = Normalize(diff); // 正規化
+            Vector3 restPosition = spring.anchor + direction * spring.naturalLength;
+            Vector3 displacement = length * (ball.position - restPosition);
+            Vector3 restoringForce = -spring.stiffness * displacement;
+            Vector3 dampingForce = -spring.dampingCoefficient * ball.velocity;
+            Vector3 force = restoringForce + dampingForce;
+            ball.acceleration = force / ball.mass;
+        }
+
+        ball.velocity = ball.velocity + ball.acceleration * deltaTime;
+        ball.position = ball.position + ball.velocity * deltaTime;
+
+        line.origin = spring.anchor;
+        line.diff = ball.position - spring.anchor;
        
 
         // フレームの開始
         Novice::BeginFrame();
 
-       
+        DebugWin(&camera, &spring);
+
+        DrawGridV2(viewProjectionMatrix, viewportMatrix);
 
         // キー入力を受け取る
         memcpy(preKeys, keys, 256);
         Novice::GetHitKeyStateAll(keys);
 
-        ImGui::Begin("Window");
+        DrawLine(line, viewProjectionMatrix, viewportMatrix, RED);
 
-        ImGui::Text("c:%f, %f, %f", c.x, c.y, c.z);
-        ImGui::Text("d:%f, %f, %f", d.x, d.y, d.z);
-        ImGui::Text("e:%f, %f, %f", e.x, e.y, e.z);
-
-        ImGui::Text(
-            "matrix:\n"
-            "%f, %f, %f, %f\n"
-            "%f, %f, %f, %f\n"
-            "%f, %f, %f, %f\n"
-            "%f, %f, %f, %f\n",
-            rotateMatrix.m[0][0], rotateMatrix.m[0][1],
-            rotateMatrix.m[0][2], rotateMatrix.m[0][3],
-            rotateMatrix.m[1][0], rotateMatrix.m[1][1],
-            rotateMatrix.m[1][2], rotateMatrix.m[1][3],
-            rotateMatrix.m[2][0], rotateMatrix.m[2][1],
-            rotateMatrix.m[2][2], rotateMatrix.m[2][3],
-            rotateMatrix.m[3][0], rotateMatrix.m[3][1],
-            rotateMatrix.m[3][2], rotateMatrix.m[3][3]
-        );
-
-        ImGui::End();
+        DrawBall(ball.position, ball.radius, viewProjectionMatrix, viewportMatrix, ball.color);
+       
         
         
         // フレームの終了
